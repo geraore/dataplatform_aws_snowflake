@@ -1,0 +1,5 @@
+dbt/
+infra/
+cdk.out/
+# sqlfluff's snowflake dialect cannot yet parse CREATE ROW ACCESS POLICY (as of 4.x).
+snowflake/scripts/V1.1.5__abac_policies.sql

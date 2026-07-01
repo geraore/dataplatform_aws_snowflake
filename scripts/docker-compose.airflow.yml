@@ -1,0 +1,29 @@
+# Local Airflow for development parity with MWAA.
+# Single-node "standalone" Airflow (SQLite + SequentialExecutor) — enough to
+# author and run the demo DAG locally. Started via run_airflow_local.sh.
+services:
+  airflow:
+    image: apache/airflow:2.10.1-python3.11
+    container_name: dataplatform-airflow-local
+    restart: unless-stopped
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      # Install the same providers/dbt as MWAA's requirements.txt.
+      _PIP_ADDITIONAL_REQUIREMENTS: >-
+        apache-airflow-providers-snowflake==5.7.1
+        dbt-snowflake==1.8.4
+      # Point the DAG at the mounted dbt project.
+      DBT_PROJECT_DIR: /opt/project/dbt/jaffle_shop
+      DBT_PROFILES_DIR: /opt/project/dbt/jaffle_shop
+      # Snowflake connection injected as a JSON env connection (see run script).
+      AIRFLOW_CONN_SNOWFLAKE_DEFAULT: ${AIRFLOW_CONN_SNOWFLAKE_DEFAULT:-}
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT:-}
+      DBT_PRIVATE_KEY_PATH: /opt/project/secrets/dbt_key.p8
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../dbt:/opt/project/dbt
+      - ./.airflow/logs:/opt/airflow/logs
+      - ./.airflow/secrets:/opt/project/secrets
+    ports:
+      - "8080:8080"
+    command: standalone

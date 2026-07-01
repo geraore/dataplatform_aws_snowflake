@@ -1,0 +1,19 @@
+# Copy to ~/.dbt/profiles.yml (or set DBT_PROFILES_DIR to this folder).
+# Uses key-pair auth as DBT_USER. Required env vars:
+#   SNOWFLAKE_ACCOUNT      e.g. abc-xy123
+#   DBT_PRIVATE_KEY_PATH   path to DBT_USER's PKCS#8 private key (.p8)
+jaffle_shop:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('DBT_SNOWFLAKE_USER', 'DBT_USER') }}"
+      private_key_path: "{{ env_var('DBT_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase: "{{ env_var('DBT_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role: DBT_ROLE
+      warehouse: DBT_WH
+      database: GOLD       # default target db (marts); seeds/staging override it
+      schema: MARTS
+      threads: 4
+      client_session_keep_alive: false

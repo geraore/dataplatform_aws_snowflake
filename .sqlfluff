@@ -1,0 +1,25 @@
+# sqlfluff config for the version-controlled Snowflake DDL (snowflake/).
+# dbt models are vendored from jaffle shop and validated with `dbt parse`
+# instead, so they are excluded from sqlfluff.
+[sqlfluff]
+dialect = snowflake
+templater = jinja
+max_line_length = 100
+# CP02 disabled: policy lambda args / landing columns are intentionally lower case.
+exclude_rules = RF04, ST06, RF02, CP02
+
+[sqlfluff:indentation]
+indented_joins = false
+template_blocks_indent = false
+
+[sqlfluff:layout:type:comma]
+line_position = trailing
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = upper

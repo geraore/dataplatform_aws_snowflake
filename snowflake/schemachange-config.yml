@@ -1,0 +1,25 @@
+# schemachange configuration.
+# Run:  schemachange deploy --config-folder .
+#
+# Auth is key-pair based. Set these environment variables before running:
+#   SNOWFLAKE_ACCOUNT           e.g. abc-xy123
+#   SNOWFLAKE_USER              SCHEMACHANGE_USER
+#   SNOWFLAKE_PRIVATE_KEY_PATH  path to the PKCS#8 private key (.p8)
+#   SNOWFLAKE_PRIVATE_KEY_PASSPHRASE  (optional)
+config-version: 1
+
+root-folder: "scripts"
+modules-folder: null
+
+snowflake-account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+snowflake-user: "{{ env_var('SNOWFLAKE_USER', 'SCHEMACHANGE_USER') }}"
+snowflake-role: "SCHEMACHANGE_ROLE"
+snowflake-warehouse: "SCHEMACHANGE_WH"
+
+# Change-history bookkeeping (created by the bootstrap script).
+change-history-table: "METADATA.SCHEMACHANGE.CHANGE_HISTORY"
+create-change-history-table: false
+
+autocommit: false
+verbose: true
+dry-run: false

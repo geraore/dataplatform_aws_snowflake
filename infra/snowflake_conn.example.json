@@ -1,0 +1,10 @@
+{
+  "user": "FIREHOSE_USER",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIE...REPLACE_ME...\n-----END PRIVATE KEY-----\n",
+  "key_passphrase": "",
+  "account_url": "https://abc-xy123.snowflakecomputing.com",
+  "role": "FIREHOSE_ROLE",
+  "database": "BRONZE",
+  "schema": "RAW",
+  "table": "EVENTS"
+}

@@ -1,0 +1,17 @@
+# Root ruff config covering Python across the monorepo
+# (infra CDK app, lambdas, Airflow DAGs).
+line-length = 100
+target-version = "py311"
+
+extend-exclude = [
+    "dbt/**",        # vendored jaffle shop (upstream-maintained)
+    "**/cdk.out/**",
+    "**/.venv/**",
+]
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[lint.per-file-ignores]
+# Airflow DAGs rely on top-level objects and the `>>` dependency idiom.
+"airflow/dags/*" = ["E402"]

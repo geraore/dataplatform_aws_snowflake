@@ -1,0 +1,40 @@
+name: 'jaffle_shop'
+
+config-version: 2
+version: '0.1'
+
+profile: 'jaffle_shop'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+analysis-paths: ["analysis"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets:
+    - "target"
+    - "dbt_modules"
+    - "logs"
+
+require-dbt-version: [">=1.0.0", "<2.0.0"]
+
+# Medallion routing. DBT_ROLE is read-write on BRONZE, SILVER and GOLD:
+#   seeds  -> BRONZE.RAW       (raw landing)
+#   stg_*  -> SILVER.STAGING   (cleaned/conformed, dbt-built views)
+#   marts  -> GOLD.MARTS       (curated tables + semantic views)
+# See macros/get_custom_names.sql, which makes +database / +schema literal.
+seeds:
+  jaffle_shop:
+    +database: BRONZE
+    +schema: RAW
+
+models:
+  jaffle_shop:
+      materialized: table
+      +database: GOLD
+      +schema: MARTS
+      staging:
+        materialized: view
+        +database: SILVER
+        +schema: STAGING

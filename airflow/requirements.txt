@@ -1,0 +1,5 @@
+# MWAA (Airflow 2.10.1) + local parity.
+# Pin against the MWAA constraints file when deploying:
+#   https://raw.githubusercontent.com/apache/airflow/constraints-2.10.1/constraints-3.11.txt
+apache-airflow-providers-snowflake==5.7.1
+dbt-snowflake==1.8.4

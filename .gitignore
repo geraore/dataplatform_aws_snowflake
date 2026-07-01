@@ -216,3 +216,29 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# AWS CDK
+infra/cdk.out/
+cdk.out/
+*.cdk.staging/
+
+# dbt
+dbt/**/target/
+dbt/**/dbt_packages/
+dbt/**/logs/
+dbt/**/.user.yml
+profiles.yml
+
+# Snowflake / secrets — never commit key material
+*.p8
+*.pem
+rsa_key*
+snowflake_key*
+.secrets/
+
+# Airflow local
+scripts/.airflow/
+logs/
+airflow.db
+airflow.cfg
+webserver_config.py

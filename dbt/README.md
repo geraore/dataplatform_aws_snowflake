@@ -24,17 +24,23 @@ cp profiles.example.yml ~/.dbt/profiles.yml     # then fill in env vars
 export SNOWFLAKE_ACCOUNT=abc-xy123
 export DBT_PRIVATE_KEY_PATH=~/.snowflake/dbt_key.p8
 
-dbt deps
+dbt deps                       # installs Snowflake-Labs/dbt_semantic_view
 dbt seed                       # -> BRONZE.RAW
-dbt build                      # staging -> SILVER, marts -> GOLD
-dbt run-operation create_semantic_views   # -> GOLD.MARTS.SEM_JAFFLE
+dbt build                      # staging -> SILVER, marts + GOLD.MARTS.SEM_JAFFLE -> GOLD
 dbt run-operation apply_governance         # bind PII masking to gold marts
 ```
+
+## Semantic view
+
+`GOLD.MARTS.SEM_JAFFLE` is defined as the model `models/sem_jaffle.sql` using the
+`semantic_view` materialization from
+[Snowflake-Labs/dbt_semantic_view](https://hub.getdbt.com/Snowflake-Labs/dbt_semantic_view/latest/).
+Because it `ref()`s the `customers` and `orders` marts, `dbt build` creates it in
+dependency order — no separate `run-operation` step.
 
 ## Added macros
 
 | Macro | Purpose |
 |-------|---------|
 | `get_custom_names.sql` | Literal `+database` / `+schema` resolution |
-| `create_semantic_views.sql` | Builds `GOLD.MARTS.SEM_JAFFLE` semantic view |
 | `apply_governance.sql` | Binds the ABAC masking policy to gold mart PII columns |

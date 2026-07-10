@@ -5,12 +5,13 @@ Stacks:
   * SnowflakeSecretStack  - Secrets Manager secret with the Snowflake key-pair
                             connection consumed by Firehose.
   * IngestStack           - API Gateway, Lambda authorizer, router Lambda,
-                            Kinesis stream, Firehose -> Snowflake (+ S3 backup).
+                            EventBridge event bus, Firehose -> Snowflake
+                            (+ S3 backup).
 
-Orchestration runs on local Airflow (see scripts/run_airflow_local.sh); the
+Orchestration runs on local Airflow (see airflow/run_airflow_local.sh); the
 managed MWAA environment was dropped to avoid its standing cost. The VPC stack
-went with it -- the remaining managed services (Firehose, Lambda, Kinesis) do
-not run inside the VPC, so nothing here needs one.
+went with it -- the remaining managed services (Firehose, Lambda, EventBridge)
+do not run inside the VPC, so nothing here needs one.
 
 Configuration is read from CDK context (cdk.json / -c flags) with sensible
 demo defaults. Nothing secret is hard-coded here.

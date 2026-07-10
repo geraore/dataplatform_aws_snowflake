@@ -1,0 +1,4 @@
+# dbt, installed into an isolated virtualenv (/opt/dbt-venv) by the Dockerfile,
+# separate from the Airflow environment to avoid pip dependency backtracking.
+# Cosmos invokes this dbt as an external binary (ExecutionMode.LOCAL, subprocess).
+dbt-snowflake==1.8.4

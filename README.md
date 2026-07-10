@@ -26,8 +26,7 @@ client ──POST /events──▶ API Gateway ──(Lambda authorizer: dummy t
 | [infra/](infra/) | AWS infrastructure as code — **CDK (Python, managed with `uv`)**. API Gateway, Lambda authorizer + router, Kinesis, Firehose→Snowflake, secrets. |
 | [snowflake/](snowflake/) | **schemachange** — version-controlled Snowflake DDL: medallion databases, database roles, dbt user, security schema + ABAC policies. |
 | [dbt/](dbt/) | The **jaffle shop** dbt project targeting Snowflake, plus native semantic views. |
-| [airflow/](airflow/) | DAGs + `requirements.txt` mounted by the local Airflow stack. |
-| [scripts/](scripts/) | `run_airflow_local.sh` + docker-compose for a local Airflow that connects to the project. |
+| [airflow/](airflow/) | DAGs (dbt orchestrated via **Cosmos**), `requirements.txt`, and `run_airflow_local.sh` + docker-compose for a local Airflow that connects to the project. |
 | [.github/workflows/](.github/workflows/) | CI: `ruff` + `sqlfluff` + `dbt parse` on every PR. |
 
 ## Prerequisites
@@ -49,12 +48,11 @@ cd ../infra && uv sync
 uv run cdk bootstrap          # first time per account/region
 uv run cdk deploy --all
 
-# 3. dbt
+# 3. dbt (dbt build creates the marts + GOLD.MARTS.SEM_JAFFLE semantic view)
 cd ../dbt/jaffle_shop && dbt deps && dbt seed && dbt build
-dbt run-operation create_semantic_views
 
-# 4. Local Airflow (orchestration)
-cd ../.. && ./scripts/run_airflow_local.sh
+# 4. Local Airflow (orchestration; runs dbt via Cosmos)
+cd ../.. && ./airflow/run_airflow_local.sh
 ```
 
 > **Cost note:** Orchestration runs on local Airflow (Docker), so there is no managed MWAA cost — and with MWAA gone, the VPC/NAT stack was dropped too. The only standing AWS spend is Kinesis + Firehose. Tear it down after the demo with `uv run cdk destroy --all` in `infra/`.

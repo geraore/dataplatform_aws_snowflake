@@ -1,5 +1,12 @@
-# MWAA (Airflow 2.10.1) + local parity.
-# Pin against the MWAA constraints file when deploying:
+# Airflow-environment dependencies (installed into the Airflow venv).
+# Resolved against the Airflow 2.10.1 constraints file by the Dockerfile:
 #   https://raw.githubusercontent.com/apache/airflow/constraints-2.10.1/constraints-3.11.txt
-apache-airflow-providers-snowflake==5.7.1
-dbt-snowflake==1.8.4
+#
+# NOTE: dbt is intentionally NOT here -- it lives in an isolated venv (see
+# dbt-requirements.txt) so its deps don't fight Airflow's. Cosmos runs it as an
+# external binary.
+# Pinned to match the Airflow 2.10.1 constraints file (which blesses 5.7.0);
+# using a different version makes the constrained install ResolutionImpossible.
+apache-airflow-providers-snowflake==5.7.0
+# Cosmos orchestrates the dbt project (one Airflow task per dbt resource).
+astronomer-cosmos==1.8.2

@@ -1,0 +1,5 @@
+packages:
+  # Native Snowflake SEMANTIC VIEW materialization for Cortex Analyst.
+  # https://hub.getdbt.com/Snowflake-Labs/dbt_semantic_view/latest/
+  - package: Snowflake-Labs/dbt_semantic_view
+    version: 1.0.5

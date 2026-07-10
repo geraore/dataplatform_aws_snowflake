@@ -9,7 +9,7 @@ Infrastructure for the ingestion pipeline.
 | `dataplatform-snowflake-secret` | Secrets Manager secret with the Snowflake key-pair connection for Firehose |
 | `dataplatform-ingest` | API Gateway + Lambda authorizer + router Lambda + Kinesis + Firehose→Snowflake (+ S3 backup `AllData`) |
 
-> Orchestration runs on **local Airflow** (`scripts/run_airflow_local.sh`). The
+> Orchestration runs on **local Airflow** (`airflow/run_airflow_local.sh`). The
 > managed MWAA environment was removed to avoid its standing cost — and with it
 > the VPC stack, since none of the remaining managed services (Firehose, Lambda,
 > Kinesis) run inside a VPC.

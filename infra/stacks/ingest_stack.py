@@ -3,11 +3,15 @@
     POST /events  -> API Gateway
                      |  (Lambda authorizer validates a dummy bearer token)
                      v
-                  Router Lambda  -> Kinesis Data Stream
-                                        |
+                  Router Lambda  -> EventBridge event bus
+                                        |  (rule matches ingest events)
                                         v
-                                    Firehose  --> Snowflake (Snowpipe Streaming)
+                                    Firehose (DirectPut) --> Snowflake
                                               \\-> S3 backup bucket (AllData)
+
+The event bus decouples the ingest API from the delivery target: the router
+just publishes events, and a rule forwards them to Firehose. Extra consumers
+(more rules/targets) can be added later without touching the producer.
 
 The Snowflake account URL / database / schema / table come from CDK context
 (with demo defaults); the user + private key are read at runtime by Firehose
@@ -21,14 +25,18 @@ from aws_cdk import (
     Stack,
 )
 from aws_cdk import aws_apigateway as apigw
+from aws_cdk import aws_events as events
+from aws_cdk import aws_events_targets as targets
 from aws_cdk import aws_iam as iam
-from aws_cdk import aws_kinesis as kinesis
 from aws_cdk import aws_kinesisfirehose as firehose
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_logs as logs
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_secretsmanager as secretsmanager
 from constructs import Construct
+
+# Marker on every event the router publishes; the delivery rule matches on it.
+EVENT_SOURCE = "dataplatform.ingest"
 
 # In a real deployment store this in SSM/Secrets Manager. It is a demo "accept
 # anything that matches" token, surfaced via context so it is not committed.
@@ -49,12 +57,11 @@ class IngestStack(Stack):
 
         demo_token = self.node.try_get_context("demo_token") or DEFAULT_DEMO_TOKEN
 
-        # --- Kinesis Data Stream -------------------------------------------------
-        stream = kinesis.Stream(
+        # --- EventBridge event bus -----------------------------------------------
+        bus = events.EventBus(
             self,
-            "EventStream",
-            stream_name=f"{prefix}-events",
-            stream_mode=kinesis.StreamMode.ON_DEMAND,
+            "EventBus",
+            event_bus_name=f"{prefix}-events",
         )
 
         # --- Lambdas -------------------------------------------------------------
@@ -77,9 +84,12 @@ class IngestStack(Stack):
             handler="handler.handler",
             code=lambda_.Code.from_asset("lambdas/router"),
             timeout=Duration.seconds(15),
-            environment={"STREAM_NAME": stream.stream_name},
+            environment={
+                "EVENT_BUS_NAME": bus.event_bus_name,
+                "EVENT_SOURCE": EVENT_SOURCE,
+            },
         )
-        stream.grant_write(router_fn)
+        bus.grant_put_events_to(router_fn)
 
         # --- API Gateway ---------------------------------------------------------
         authorizer = apigw.TokenAuthorizer(
@@ -103,8 +113,8 @@ class IngestStack(Stack):
                 throttling_burst_limit=20,
             ),
         )
-        events = api.root.add_resource("events")
-        events.add_method(
+        events_resource = api.root.add_resource("events")
+        events_resource.add_method(
             "POST",
             apigw.LambdaIntegration(router_fn),
             authorizer=authorizer,
@@ -144,7 +154,6 @@ class IngestStack(Stack):
             role_name=f"{prefix}-firehose-role",
             assumed_by=iam.ServicePrincipal("firehose.amazonaws.com"),
         )
-        stream.grant_read(firehose_role)
         backup_bucket.grant_read_write(firehose_role)
         snowflake_secret.grant_read(firehose_role)
         firehose_log_group.grant_write(firehose_role)
@@ -168,13 +177,7 @@ class IngestStack(Stack):
             self,
             "ToSnowflake",
             delivery_stream_name=f"{prefix}-to-snowflake",
-            delivery_stream_type="KinesisStreamAsSource",
-            kinesis_stream_source_configuration=(
-                firehose.CfnDeliveryStream.KinesisStreamSourceConfigurationProperty(
-                    kinesis_stream_arn=stream.stream_arn,
-                    role_arn=firehose_role.role_arn,
-                )
-            ),
+            delivery_stream_type="DirectPut",
             snowflake_destination_configuration=(
                 firehose.CfnDeliveryStream.SnowflakeDestinationConfigurationProperty(
                     account_url=sf_account_url,
@@ -217,8 +220,26 @@ class IngestStack(Stack):
         )
         delivery_stream.node.add_dependency(firehose_role)
 
+        # --- Rule: event bus -> Firehose -----------------------------------------
+        # Matches the router's events and forwards only the original payload
+        # ($.detail) to Firehose, so Snowflake sees the event -- not the
+        # EventBridge envelope. Each event becomes one Firehose record.
+        delivery_rule = events.Rule(
+            self,
+            "ToFirehoseRule",
+            rule_name=f"{prefix}-to-firehose",
+            event_bus=bus,
+            event_pattern=events.EventPattern(source=[EVENT_SOURCE]),
+        )
+        delivery_rule.add_target(
+            targets.KinesisFirehoseStream(
+                delivery_stream,
+                message=events.RuleTargetInput.from_event_path("$.detail"),
+            )
+        )
+
         # Expose the invoke URL for the verification curl.
         self.api_url = api.url
         CfnOutput(self, "EventsEndpoint", value=f"{api.url}events")
         CfnOutput(self, "EventBackupBucketName", value=backup_bucket.bucket_name)
-        CfnOutput(self, "EventStreamName", value=stream.stream_name)
+        CfnOutput(self, "EventBusName", value=bus.event_bus_name)

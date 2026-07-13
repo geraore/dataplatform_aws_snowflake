@@ -21,12 +21,15 @@ from pathlib import Path
 
 import aws_cdk as cdk
 from dotenv import dotenv_values
+from stacks.analyst_stack import AnalystStack
 from stacks.ingest_stack import IngestStack
 from stacks.snowflake_secret_stack import SnowflakeSecretStack
 
 # Configuration is loaded from the repo-root .env via python-dotenv (no defaults
 # baked into code, no direct os.environ access). See .env.example for the keys.
 config = dotenv_values(Path(__file__).resolve().parents[1] / ".env")
+
+repo_root = Path(__file__).resolve().parents[1]
 
 app = cdk.App()
 
@@ -45,6 +48,20 @@ ingest = IngestStack(
     f"{prefix}-ingest",
     prefix=prefix,
     snowflake_secret=snowflake_secret.secret,
+    env=env,
+)
+
+# Read the CORTEX_USER private key generated at .secrets/cortex_key.p8.
+# The matching public key is registered on CORTEX_USER by the schemachange
+# migration V1.1.8__cortex_analyst_setup.sql.
+cortex_private_key = (repo_root / ".secrets" / "cortex_key.p8").read_text()
+
+analyst = AnalystStack(
+    app,
+    f"{prefix}-analyst",
+    prefix=prefix,
+    snowflake_account=config["SNOWFLAKE_ACCOUNT"],
+    cortex_private_key=cortex_private_key,
     env=env,
 )
 

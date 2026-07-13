@@ -22,11 +22,12 @@ WAREHOUSE_SIZE = 'XSMALL' AUTO_SUSPEND = 1 AUTO_RESUME = TRUE INITIALLY_SUSPENDE
 -- --- schemachange role + user ----------------------------------------------
 CREATE ROLE IF NOT EXISTS SCHEMACHANGE_ROLE;
 
--- Demo scope: let schemachange create databases, roles and users. Production
--- would grant these privileges more narrowly.
+-- Demo scope: let schemachange create databases, roles, users, and warehouses.
+-- Production would grant these privileges more narrowly.
 GRANT CREATE DATABASE ON ACCOUNT TO ROLE SCHEMACHANGE_ROLE;
 GRANT CREATE ROLE ON ACCOUNT TO ROLE SCHEMACHANGE_ROLE WITH GRANT OPTION;
 GRANT CREATE USER ON ACCOUNT TO ROLE SCHEMACHANGE_ROLE WITH GRANT OPTION;
+GRANT CREATE WAREHOUSE ON ACCOUNT TO ROLE SCHEMACHANGE_ROLE;
 GRANT ROLE SCHEMACHANGE_ROLE TO ROLE SYSADMIN;
 GRANT USAGE ON WAREHOUSE SCHEMACHANGE_WH TO ROLE SCHEMACHANGE_ROLE;
 

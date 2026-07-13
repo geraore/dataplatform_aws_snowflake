@@ -133,7 +133,7 @@ class IngestStack(Stack):
             auto_delete_objects=True,
         )
 
-        # --- Firehose: Kinesis -> Snowflake (+ S3 backup) ------------------------
+        # --- Firehose: DirectPut -> Snowflake (+ S3 backup) ----------------------
         firehose_log_group = logs.LogGroup(
             self,
             "FirehoseLogs",
@@ -176,7 +176,7 @@ class IngestStack(Stack):
         delivery_stream = firehose.CfnDeliveryStream(
             self,
             "ToSnowflake",
-            delivery_stream_name=f"{prefix}-to-snowflake",
+            delivery_stream_name=f"{prefix}-events-delivery",
             delivery_stream_type="DirectPut",
             snowflake_destination_configuration=(
                 firehose.CfnDeliveryStream.SnowflakeDestinationConfigurationProperty(

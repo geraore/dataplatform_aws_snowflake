@@ -1,8 +1,19 @@
 """Tests for the Events ingestion API (POST /events).
 
+The API enforces CloudEvents 1.0 structured mode:
+  https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md
+
+Required CloudEvents attributes validated by the router Lambda:
+  - specversion  "1.0"
+  - id           non-empty string (unique per source)
+  - source       non-empty URI-reference
+  - type         non-empty string (reverse-DNS prefix recommended)
+
+Content-Type must be: application/cloudevents+json
+
 Usage:
-    python tests/test_events_api.py
-    python tests/test_events_api.py -v        # verbose output
+    uv run python test_events_api.py
+    uv run python test_events_api.py -v    # verbose output
 """
 
 import argparse
@@ -12,19 +23,30 @@ import time
 
 import requests
 
-from config import AUTH_HEADERS, EVENTS_API_URL
+from config import CE_HEADERS, EVENTS_API_URL, make_event
 
 PASS = "\033[32mPASS\033[0m"
 FAIL = "\033[31mFAIL\033[0m"
 
-
-def _post(payload: dict | None, headers: dict | None = None) -> requests.Response:
-    h = AUTH_HEADERS if headers is None else headers
-    body = json.dumps(payload) if payload is not None else payload
-    return requests.post(EVENTS_API_URL, data=body, headers=h, timeout=15)
-
-
 results: list[tuple[str, bool, str]] = []
+
+
+def _post(payload: dict, headers: dict | None = None) -> requests.Response:
+    return requests.post(
+        EVENTS_API_URL,
+        data=json.dumps(payload),
+        headers=CE_HEADERS if headers is None else headers,
+        timeout=15,
+    )
+
+
+def _raw_post(body: str, headers: dict | None = None) -> requests.Response:
+    return requests.post(
+        EVENTS_API_URL,
+        data=body,
+        headers=CE_HEADERS if headers is None else headers,
+        timeout=15,
+    )
 
 
 def run(name: str, verbose: bool):
@@ -42,72 +64,174 @@ def run(name: str, verbose: bool):
     return decorator
 
 
-def test_healthy_event(verbose: bool):
-    @run("POST valid event returns 202", verbose)
-    def _():
-        r = _post({"event_type": "page_view", "user_id": "u-001", "url": "/home"})
-        assert r.status_code == 202, f"expected 202, got {r.status_code}: {r.text}"
-        body = r.json()
-        assert body.get("status") == "accepted", f"unexpected body: {body}"
-
-
-def test_minimal_payload(verbose: bool):
-    @run("POST minimal payload (empty object) returns 202", verbose)
-    def _():
-        r = _post({})
-        assert r.status_code == 202, f"expected 202, got {r.status_code}: {r.text}"
-
-
-def test_nested_payload(verbose: bool):
-    @run("POST deeply nested payload returns 202", verbose)
-    def _():
-        payload = {
-            "event_type": "purchase",
-            "user": {"id": "u-002", "tier": "gold"},
-            "items": [{"sku": "SKU-1", "qty": 2}, {"sku": "SKU-2", "qty": 1}],
-            "total": 59.99,
-        }
-        r = _post(payload)
-        assert r.status_code == 202, f"expected 202, got {r.status_code}: {r.text}"
-
-
-def test_invalid_json(verbose: bool):
-    @run("POST malformed JSON returns 400", verbose)
-    def _():
-        r = requests.post(
-            EVENTS_API_URL,
-            data="not-json{{{{",
-            headers=AUTH_HEADERS,
-            timeout=15,
-        )
-        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
-
+# ---------------------------------------------------------------------------
+# Auth tests (authorizer runs before Lambda — content-type does not matter)
+# ---------------------------------------------------------------------------
 
 def test_missing_auth(verbose: bool):
-    @run("POST without Authorization header returns 401", verbose)
+    @run("No Authorization header → 401", verbose)
     def _():
-        r = requests.post(
-            EVENTS_API_URL,
-            json={"event_type": "test"},
-            headers={"Content-Type": "application/json"},
-            timeout=15,
-        )
+        h = {k: v for k, v in CE_HEADERS.items() if k != "Authorization"}
+        r = _post(make_event("com.example.test"), headers=h)
         assert r.status_code == 401, f"expected 401, got {r.status_code}: {r.text}"
 
 
 def test_wrong_token(verbose: bool):
-    @run("POST with wrong token returns 403", verbose)
+    @run("Wrong bearer token → 403", verbose)
     def _():
-        bad_headers = {**AUTH_HEADERS, "Authorization": "Bearer wrong-token"}
-        r = _post({"event_type": "test"}, headers=bad_headers)
+        h = {**CE_HEADERS, "Authorization": "Bearer wrong-token"}
+        r = _post(make_event("com.example.test"), headers=h)
         assert r.status_code == 403, f"expected 403, got {r.status_code}: {r.text}"
 
 
-def test_response_time(verbose: bool):
-    @run("POST responds within 5 seconds", verbose)
+# ---------------------------------------------------------------------------
+# Content-Type enforcement (CloudEvents structured mode)
+# ---------------------------------------------------------------------------
+
+def test_wrong_content_type(verbose: bool):
+    @run("Content-Type: application/json (not CloudEvents) → 415", verbose)
     def _():
+        h = {**CE_HEADERS, "Content-Type": "application/json"}
+        r = _post(make_event("com.example.test"), headers=h)
+        assert r.status_code == 415, f"expected 415, got {r.status_code}: {r.text}"
+
+
+# ---------------------------------------------------------------------------
+# CloudEvents required-attribute validation
+# ---------------------------------------------------------------------------
+
+def test_missing_specversion(verbose: bool):
+    @run("Missing 'specversion' → 400", verbose)
+    def _():
+        evt = make_event("com.example.test")
+        del evt["specversion"]
+        r = _post(evt)
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+        assert "specversion" in r.text, f"error should mention 'specversion': {r.text}"
+
+
+def test_wrong_specversion(verbose: bool):
+    @run("specversion '0.3' (unsupported) → 400", verbose)
+    def _():
+        evt = {**make_event("com.example.test"), "specversion": "0.3"}
+        r = _post(evt)
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+def test_missing_id(verbose: bool):
+    @run("Missing 'id' → 400", verbose)
+    def _():
+        evt = make_event("com.example.test")
+        del evt["id"]
+        r = _post(evt)
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+def test_missing_source(verbose: bool):
+    @run("Missing 'source' → 400", verbose)
+    def _():
+        evt = make_event("com.example.test")
+        del evt["source"]
+        r = _post(evt)
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+def test_missing_type(verbose: bool):
+    @run("Missing 'type' → 400", verbose)
+    def _():
+        evt = make_event("com.example.test")
+        del evt["type"]
+        r = _post(evt)
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+def test_empty_id(verbose: bool):
+    @run("Empty string 'id' → 400", verbose)
+    def _():
+        evt = {**make_event("com.example.test"), "id": "   "}
+        r = _post(evt)
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+def test_malformed_json(verbose: bool):
+    @run("Malformed JSON body → 400", verbose)
+    def _():
+        r = _raw_post("not-json{{{{")
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+# ---------------------------------------------------------------------------
+# Happy-path: valid CloudEvents
+# ---------------------------------------------------------------------------
+
+def test_minimal_event(verbose: bool):
+    @run("Minimal CloudEvent (required attrs only) → 202", verbose)
+    def _():
+        evt = {
+            "specversion": "1.0",
+            "id": "test-minimal-001",
+            "source": "//dataplatform/tests",
+            "type": "com.dataplatform.test.minimal",
+        }
+        r = _post(evt)
+        assert r.status_code == 202, f"expected 202, got {r.status_code}: {r.text}"
+        assert r.json().get("status") == "accepted", f"unexpected body: {r.text}"
+
+
+def test_page_view_event(verbose: bool):
+    @run("CloudEvent: page_view with data → 202", verbose)
+    def _():
+        evt = make_event(
+            "com.dataplatform.web.page_view",
+            source="//dataplatform/web-tracker",
+            data={"user_id": "u-001", "url": "/home", "session_id": "s-abc123"},
+        )
+        r = _post(evt)
+        assert r.status_code == 202, f"expected 202, got {r.status_code}: {r.text}"
+        if verbose:
+            print(f"\n         event id: {evt['id']}")
+
+
+def test_purchase_event(verbose: bool):
+    @run("CloudEvent: purchase with nested data → 202", verbose)
+    def _():
+        evt = make_event(
+            "com.dataplatform.commerce.order_placed",
+            source="//dataplatform/order-service",
+            data={
+                "order_id": "ord-9981",
+                "customer": {"id": "u-002", "tier": "gold"},
+                "items": [{"sku": "SKU-1", "qty": 2}, {"sku": "SKU-2", "qty": 1}],
+                "total_usd": 59.99,
+            },
+        )
+        r = _post(evt)
+        assert r.status_code == 202, f"expected 202, got {r.status_code}: {r.text}"
+
+
+def test_event_with_subject(verbose: bool):
+    @run("CloudEvent with optional 'subject' attribute → 202", verbose)
+    def _():
+        evt = make_event(
+            "com.dataplatform.user.signup",
+            source="//dataplatform/auth-service",
+            data={"plan": "pro"},
+            subject="user/u-003",
+        )
+        r = _post(evt)
+        assert r.status_code == 202, f"expected 202, got {r.status_code}: {r.text}"
+
+
+# ---------------------------------------------------------------------------
+# Latency
+# ---------------------------------------------------------------------------
+
+def test_response_time(verbose: bool):
+    @run("Responds within 5 seconds", verbose)
+    def _():
+        evt = make_event("com.dataplatform.test.latency")
         start = time.monotonic()
-        r = _post({"event_type": "latency_check"})
+        r = _post(evt)
         elapsed = time.monotonic() - start
         assert r.status_code == 202, f"unexpected status {r.status_code}"
         assert elapsed < 5.0, f"response took {elapsed:.2f}s (threshold: 5s)"
@@ -115,20 +239,36 @@ def test_response_time(verbose: bool):
             print(f"         elapsed: {elapsed:.3f}s")
 
 
+# ---------------------------------------------------------------------------
+
 def main():
-    parser = argparse.ArgumentParser(description="Events API smoke tests")
+    parser = argparse.ArgumentParser(description="Events API smoke tests (CloudEvents 1.0)")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
-    print(f"\nEvents API  →  {EVENTS_API_URL}\n")
+    print(f"\nEvents API  →  {EVENTS_API_URL}")
+    print(f"CloudEvents spec: https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md\n")
 
     for fn in [
-        test_healthy_event,
-        test_minimal_payload,
-        test_nested_payload,
-        test_invalid_json,
+        # Auth
         test_missing_auth,
         test_wrong_token,
+        # Content-Type
+        test_wrong_content_type,
+        # Required-attribute validation
+        test_missing_specversion,
+        test_wrong_specversion,
+        test_missing_id,
+        test_missing_source,
+        test_missing_type,
+        test_empty_id,
+        test_malformed_json,
+        # Happy path
+        test_minimal_event,
+        test_page_view_event,
+        test_purchase_event,
+        test_event_with_subject,
+        # Latency
         test_response_time,
     ]:
         fn(args.verbose)

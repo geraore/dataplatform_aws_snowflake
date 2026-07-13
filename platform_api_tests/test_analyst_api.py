@@ -4,8 +4,8 @@ The Lambda proxies the question to Snowflake Cortex Analyst and returns:
     { "interpretation": "<plain-English>", "sql": "<SQL statement>" }
 
 Usage:
-    python tests/test_analyst_api.py
-    python tests/test_analyst_api.py -v        # verbose: show SQL + interpretation
+    uv run python test_analyst_api.py
+    uv run python test_analyst_api.py -v    # verbose: show SQL + interpretation
 """
 
 import argparse
@@ -15,7 +15,7 @@ import time
 
 import requests
 
-from config import ANALYST_API_URL, AUTH_HEADERS
+from config import ANALYST_API_URL, ANALYST_HEADERS as AUTH_HEADERS
 
 PASS = "\033[32mPASS\033[0m"
 FAIL = "\033[31mFAIL\033[0m"

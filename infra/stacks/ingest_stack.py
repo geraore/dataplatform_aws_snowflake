@@ -91,11 +91,12 @@ class IngestStack(Stack):
                 "lambdas/router",
                 bundling=cdk.BundlingOptions(
                     image=lambda_.Runtime.PYTHON_3_12.bundling_image,
+                    platform="linux/amd64",
                     command=[
                         "bash",
                         "-c",
                         "pip install -r requirements.txt -t /asset-output --quiet"
-                        " && cp handler.py /asset-output",
+                        " && cp handler.py models.py eventbridge.py /asset-output",
                     ],
                 ),
             ),
@@ -271,7 +272,8 @@ class IngestStack(Stack):
                     role_arn=firehose_role.role_arn,
                     prefix="events/!{partitionKeyFromQuery:event_type}/!{timestamp:yyyy}/!{timestamp:MM}/!{timestamp:dd}/",
                     error_output_prefix="events/errors/!{firehose:error-output-type}/!{timestamp:yyyy}/!{timestamp:MM}/!{timestamp:dd}/",
-                    compression_format="GZIP",
+                    compression_format="UNCOMPRESSED",
+                    file_extension=".jsonl",
                     buffering_hints=firehose.CfnDeliveryStream.BufferingHintsProperty(
                         interval_in_seconds=60,
                         size_in_m_bs=64,
@@ -316,6 +318,20 @@ class IngestStack(Stack):
         )
         s3_events_stream.node.add_dependency(firehose_role)
 
+        # Wrap L1 CfnDeliveryStream constructs as IDeliveryStream for the L2 target.
+        delivery_stream_l2 = firehose.DeliveryStream.from_delivery_stream_attributes(
+            self,
+            "SnowflakeDeliveryRef",
+            delivery_stream_arn=delivery_stream.attr_arn,
+            delivery_stream_name=f"{prefix}-snowflake-delivery",
+        )
+        s3_events_stream_l2 = firehose.DeliveryStream.from_delivery_stream_attributes(
+            self,
+            "S3EventsStreamRef",
+            delivery_stream_arn=s3_events_stream.attr_arn,
+            delivery_stream_name=f"{prefix}-events-s3",
+        )
+
         # --- Rules: event bus -> Firehose ----------------------------------------
         # The router sets DetailType = CloudEvents `type`, so we can route on it.
         # snowflake_event_types (from routing.yaml) go to Snowflake; everything
@@ -331,8 +347,8 @@ class IngestStack(Stack):
             ),
         )
         delivery_rule.add_target(
-            targets.KinesisFirehoseStream(
-                delivery_stream,
+            targets.FirehoseDeliveryStream(
+                delivery_stream_l2,
                 message=events.RuleTargetInput.from_event_path("$.detail"),
             )
         )
@@ -348,8 +364,8 @@ class IngestStack(Stack):
             ),
         )
         s3_events_rule.add_target(
-            targets.KinesisFirehoseStream(
-                s3_events_stream,
+            targets.FirehoseDeliveryStream(
+                s3_events_stream_l2,
                 message=events.RuleTargetInput.from_event_path("$.detail"),
             )
         )

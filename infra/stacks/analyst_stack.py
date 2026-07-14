@@ -25,7 +25,7 @@ CDK context keys (cdk.json or -c):
 import json
 
 import aws_cdk as cdk
-from aws_cdk import CfnOutput, Duration, SecretValue, Stack
+from aws_cdk import CfnOutput, Duration, RemovalPolicy, SecretValue, Stack
 from aws_cdk import aws_apigateway as apigw
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_logs as logs
@@ -85,6 +85,14 @@ class AnalystStack(Stack):
 
         # --- Analyst Lambda (bundled: PyJWT + cryptography + requests) -----------
         # Requires Docker on the build machine; CDK bundles deps into the zip.
+        analyst_log_group = logs.LogGroup(
+            self,
+            "AnalystFnLogGroup",
+            log_group_name=f"/aws/lambda/{prefix}-analyst",
+            retention=logs.RetentionDays.ONE_WEEK,
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+
         analyst_fn = lambda_.Function(
             self,
             "AnalystFn",
@@ -95,11 +103,12 @@ class AnalystStack(Stack):
                 "lambdas/analyst",
                 bundling=cdk.BundlingOptions(
                     image=lambda_.Runtime.PYTHON_3_12.bundling_image,
+                    platform="linux/amd64",
                     command=[
                         "bash",
                         "-c",
                         "pip install -r requirements.txt -t /asset-output --quiet"
-                        " && cp handler.py /asset-output",
+                        " && cp handler.py cortex.py sf_secrets.py snowflake_auth.py /asset-output",
                     ],
                 ),
             ),
@@ -109,7 +118,7 @@ class AnalystStack(Stack):
                 "SNOWFLAKE_SECRET_ARN": cortex_secret.secret_arn,
                 "CORTEX_SOURCE": cortex_source,
             },
-            log_retention=logs.RetentionDays.ONE_WEEK,
+            log_group=analyst_log_group,
         )
         cortex_secret.grant_read(analyst_fn)
 

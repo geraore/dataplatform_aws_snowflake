@@ -21,6 +21,7 @@ The Snowflake account URL / database / schema / table come from CDK context
 from the Secrets Manager secret created in SnowflakeSecretStack.
 """
 
+import aws_cdk as cdk
 from aws_cdk import (
     CfnOutput,
     Duration,
@@ -86,7 +87,18 @@ class IngestStack(Stack):
             function_name=f"{prefix}-router",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="handler.handler",
-            code=lambda_.Code.from_asset("lambdas/router"),
+            code=lambda_.Code.from_asset(
+                "lambdas/router",
+                bundling=cdk.BundlingOptions(
+                    image=lambda_.Runtime.PYTHON_3_12.bundling_image,
+                    command=[
+                        "bash",
+                        "-c",
+                        "pip install -r requirements.txt -t /asset-output --quiet"
+                        " && cp handler.py /asset-output",
+                    ],
+                ),
+            ),
             timeout=Duration.seconds(15),
             environment={
                 "EVENT_BUS_NAME": bus.event_bus_name,

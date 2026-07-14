@@ -160,6 +160,40 @@ def test_malformed_json(verbose: bool):
         assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
 
 
+def test_empty_source(verbose: bool):
+    @run("Whitespace-only 'source' → 400", verbose)
+    def _():
+        evt = {**make_event("com.example.test"), "source": "   "}
+        r = _post(evt)
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+def test_empty_type(verbose: bool):
+    @run("Whitespace-only 'type' → 400", verbose)
+    def _():
+        evt = {**make_event("com.example.test"), "type": "   "}
+        r = _post(evt)
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+def test_null_required_fields(verbose: bool):
+    @run("Null value in required field → 400", verbose)
+    def _():
+        for field in ("specversion", "id", "source", "type"):
+            evt = {**make_event("com.example.test"), field: None}
+            r = _post(evt)
+            assert r.status_code == 400, (
+                f"expected 400 for null '{field}', got {r.status_code}: {r.text}"
+            )
+
+
+def test_get_method(verbose: bool):
+    @run("GET method → 405", verbose)
+    def _():
+        r = requests.get(EVENTS_API_URL, headers=CE_HEADERS, timeout=15)
+        assert r.status_code == 405, f"expected 405, got {r.status_code}: {r.text}"
+
+
 # ---------------------------------------------------------------------------
 # Happy-path: valid CloudEvents
 # ---------------------------------------------------------------------------
@@ -263,6 +297,10 @@ def main():
         test_missing_type,
         test_empty_id,
         test_malformed_json,
+        test_empty_source,
+        test_empty_type,
+        test_null_required_fields,
+        test_get_method,
         # Happy path
         test_minimal_event,
         test_page_view_event,

@@ -110,6 +110,27 @@ def test_invalid_json(verbose: bool):
         assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
 
 
+def test_null_question(verbose: bool):
+    @run("POST with null question returns 400", verbose)
+    def _():
+        r = _post({"question": None})
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+def test_empty_body(verbose: bool):
+    @run("POST with empty body {} returns 400", verbose)
+    def _():
+        r = _post({})
+        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text}"
+
+
+def test_get_method(verbose: bool):
+    @run("GET method returns 405", verbose)
+    def _():
+        r = requests.get(ANALYST_API_URL, headers=AUTH_HEADERS, timeout=15)
+        assert r.status_code == 405, f"expected 405, got {r.status_code}: {r.text}"
+
+
 def test_missing_auth(verbose: bool):
     @run("POST without Authorization header returns 401", verbose)
     def _():
@@ -156,6 +177,9 @@ def main():
         test_missing_question_field,
         test_empty_question,
         test_invalid_json,
+        test_null_question,
+        test_empty_body,
+        test_get_method,
         test_basic_question,
         test_revenue_question,
         test_top_customers_question,

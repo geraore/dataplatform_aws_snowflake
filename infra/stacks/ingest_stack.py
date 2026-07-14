@@ -4,14 +4,17 @@
                      |  (Lambda authorizer validates a dummy bearer token)
                      v
                   Router Lambda  -> EventBridge event bus
-                                        |  (rule matches ingest events)
-                                        v
-                                    Firehose (DirectPut) --> Snowflake
-                                              \\-> S3 backup bucket (AllData)
+                                        |  (two rules, same pattern)
+                                        |
+                                        +---> Firehose (DirectPut) --> Snowflake
+                                        |
+                                        +---> Firehose (DirectPut) --> S3 (raw event store)
+                                                  prefix: events/<event_type>/<yyyy>/<MM>/<dd>/
 
-The event bus decouples the ingest API from the delivery target: the router
-just publishes events, and a rule forwards them to Firehose. Extra consumers
-(more rules/targets) can be added later without touching the producer.
+The event bus decouples the ingest API from delivery targets: the router just
+publishes events, and rules forward them. S3 is the raw event store partitioned
+by CloudEvents `type`; Snowflake is the queryable layer built on top of it.
+Extra consumers can be added as new rules without touching the producer.
 
 The Snowflake account URL / database / schema / table come from CDK context
 (with demo defaults); the user + private key are read at runtime by Firehose
@@ -51,6 +54,7 @@ class IngestStack(Stack):
         *,
         prefix: str,
         snowflake_secret: secretsmanager.ISecret,
+        snowflake_event_types: list[str],
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -121,19 +125,31 @@ class IngestStack(Stack):
             authorization_type=apigw.AuthorizationType.CUSTOM,
         )
 
-        # --- S3 backup bucket (every event archived) -----------------------------
-        backup_bucket = s3.Bucket(
+        # --- S3 raw event store --------------------------------------------------
+        events_bucket = s3.Bucket(
             self,
-            "EventBackupBucket",
-            bucket_name=f"{prefix}-events-backup-{self.account}",
+            "EventsBucket",
+            bucket_name=f"{prefix}-events-{self.account}",
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             encryption=s3.BucketEncryption.S3_MANAGED,
             versioned=True,
-            removal_policy=RemovalPolicy.DESTROY,  # demo: clean up on destroy
+            removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )
 
-        # --- Firehose: DirectPut -> Snowflake (+ S3 backup) ----------------------
+        # --- Firehose: DirectPut -> Snowflake ------------------------------------
+        # AWS CloudFormation requires s3_configuration on Snowflake destinations
+        # regardless of backup mode — this bucket captures delivery failures only.
+        sf_failures_bucket = s3.Bucket(
+            self,
+            "SfFailuresBucket",
+            bucket_name=f"{prefix}-sf-failures-{self.account}",
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
+
         firehose_log_group = logs.LogGroup(
             self,
             "FirehoseLogs",
@@ -147,6 +163,12 @@ class IngestStack(Stack):
             log_group=firehose_log_group,
             log_stream_name="snowflake-delivery",
         )
+        s3_events_log_stream = logs.LogStream(
+            self,
+            "S3EventsLogStream",
+            log_group=firehose_log_group,
+            log_stream_name="events-s3-delivery",
+        )
 
         firehose_role = iam.Role(
             self,
@@ -154,7 +176,8 @@ class IngestStack(Stack):
             role_name=f"{prefix}-firehose-role",
             assumed_by=iam.ServicePrincipal("firehose.amazonaws.com"),
         )
-        backup_bucket.grant_read_write(firehose_role)
+        events_bucket.grant_read_write(firehose_role)
+        sf_failures_bucket.grant_read_write(firehose_role)
         snowflake_secret.grant_read(firehose_role)
         firehose_log_group.grant_write(firehose_role)
 
@@ -175,8 +198,8 @@ class IngestStack(Stack):
 
         delivery_stream = firehose.CfnDeliveryStream(
             self,
-            "ToSnowflake",
-            delivery_stream_name=f"{prefix}-events-delivery",
+            "SnowflakeDelivery",
+            delivery_stream_name=f"{prefix}-snowflake-delivery",
             delivery_stream_type="DirectPut",
             snowflake_destination_configuration=(
                 firehose.CfnDeliveryStream.SnowflakeDestinationConfigurationProperty(
@@ -198,13 +221,13 @@ class IngestStack(Stack):
                     data_loading_option="VARIANT_CONTENT_AND_METADATA_MAPPING",
                     content_column_name="record_content",
                     meta_data_column_name="record_metadata",
-                    s3_backup_mode="AllData",
+                    s3_backup_mode="FailedDataOnly",
                     s3_configuration=(
                         firehose.CfnDeliveryStream.S3DestinationConfigurationProperty(
-                            bucket_arn=backup_bucket.bucket_arn,
+                            bucket_arn=sf_failures_bucket.bucket_arn,
                             role_arn=firehose_role.role_arn,
-                            prefix="events/",
-                            error_output_prefix="errors/",
+                            prefix="delivery-failures/!{timestamp:yyyy}/!{timestamp:MM}/!{timestamp:dd}/",
+                            error_output_prefix="delivery-errors/!{firehose:error-output-type}/!{timestamp:yyyy}/!{timestamp:MM}/!{timestamp:dd}/",
                             compression_format="GZIP",
                             buffering_hints=(
                                 firehose.CfnDeliveryStream.BufferingHintsProperty(
@@ -220,16 +243,80 @@ class IngestStack(Stack):
         )
         delivery_stream.node.add_dependency(firehose_role)
 
-        # --- Rule: event bus -> Firehose -----------------------------------------
-        # Matches the router's events and forwards only the original payload
-        # ($.detail) to Firehose, so Snowflake sees the event -- not the
-        # EventBridge envelope. Each event becomes one Firehose record.
+        # --- Firehose: DirectPut -> S3 raw event store ---------------------------
+        # ExtendedS3DestinationConfiguration is required for dynamic partitioning.
+        # MetadataExtraction pulls `type` from each CloudEvent (JMESPath) and maps
+        # it to `event_type`, which is substituted into the prefix.
+        # AWS requires a minimum 64 MB buffer when dynamic partitioning is enabled.
+        s3_events_stream = firehose.CfnDeliveryStream(
+            self,
+            "ToS3Events",
+            delivery_stream_name=f"{prefix}-events-s3",
+            delivery_stream_type="DirectPut",
+            extended_s3_destination_configuration=(
+                firehose.CfnDeliveryStream.ExtendedS3DestinationConfigurationProperty(
+                    bucket_arn=events_bucket.bucket_arn,
+                    role_arn=firehose_role.role_arn,
+                    prefix="events/!{partitionKeyFromQuery:event_type}/!{timestamp:yyyy}/!{timestamp:MM}/!{timestamp:dd}/",
+                    error_output_prefix="events/errors/!{firehose:error-output-type}/!{timestamp:yyyy}/!{timestamp:MM}/!{timestamp:dd}/",
+                    compression_format="GZIP",
+                    buffering_hints=firehose.CfnDeliveryStream.BufferingHintsProperty(
+                        interval_in_seconds=60,
+                        size_in_m_bs=64,
+                    ),
+                    dynamic_partitioning_configuration=(
+                        firehose.CfnDeliveryStream.DynamicPartitioningConfigurationProperty(
+                            enabled=True,
+                            retry_options=firehose.CfnDeliveryStream.RetryOptionsProperty(
+                                duration_in_seconds=300,
+                            ),
+                        )
+                    ),
+                    processing_configuration=(
+                        firehose.CfnDeliveryStream.ProcessingConfigurationProperty(
+                            enabled=True,
+                            processors=[
+                                firehose.CfnDeliveryStream.ProcessorProperty(
+                                    type="MetadataExtraction",
+                                    parameters=[
+                                        firehose.CfnDeliveryStream.ProcessorParameterProperty(
+                                            parameter_name="MetadataExtractionQuery",
+                                            parameter_value="{event_type: .type}",
+                                        ),
+                                        firehose.CfnDeliveryStream.ProcessorParameterProperty(
+                                            parameter_name="JsonParsingEngine",
+                                            parameter_value="JQ-1.6",
+                                        ),
+                                    ],
+                                )
+                            ],
+                        )
+                    ),
+                    cloud_watch_logging_options=(
+                        firehose.CfnDeliveryStream.CloudWatchLoggingOptionsProperty(
+                            enabled=True,
+                            log_group_name=firehose_log_group.log_group_name,
+                            log_stream_name=s3_events_log_stream.log_stream_name,
+                        )
+                    ),
+                )
+            ),
+        )
+        s3_events_stream.node.add_dependency(firehose_role)
+
+        # --- Rules: event bus -> Firehose ----------------------------------------
+        # The router sets DetailType = CloudEvents `type`, so we can route on it.
+        # snowflake_event_types (from routing.yaml) go to Snowflake; everything
+        # else goes to S3 only.
         delivery_rule = events.Rule(
             self,
             "ToFirehoseRule",
             rule_name=f"{prefix}-to-firehose",
             event_bus=bus,
-            event_pattern=events.EventPattern(source=[EVENT_SOURCE]),
+            event_pattern=events.EventPattern(
+                source=[EVENT_SOURCE],
+                detail={"type": snowflake_event_types},
+            ),
         )
         delivery_rule.add_target(
             targets.KinesisFirehoseStream(
@@ -238,8 +325,25 @@ class IngestStack(Stack):
             )
         )
 
+        s3_events_rule = events.Rule(
+            self,
+            "ToS3EventsRule",
+            rule_name=f"{prefix}-to-s3-events",
+            event_bus=bus,
+            event_pattern=events.EventPattern(
+                source=[EVENT_SOURCE],
+                detail={"type": [{"anything-but": snowflake_event_types}]},
+            ),
+        )
+        s3_events_rule.add_target(
+            targets.KinesisFirehoseStream(
+                s3_events_stream,
+                message=events.RuleTargetInput.from_event_path("$.detail"),
+            )
+        )
+
         # Expose the invoke URL for the verification curl.
         self.api_url = api.url
         CfnOutput(self, "EventsEndpoint", value=f"{api.url}events")
-        CfnOutput(self, "EventBackupBucketName", value=backup_bucket.bucket_name)
         CfnOutput(self, "EventBusName", value=bus.event_bus_name)
+        CfnOutput(self, "EventsBucketName", value=events_bucket.bucket_name)

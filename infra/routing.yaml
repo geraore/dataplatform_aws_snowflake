@@ -1,0 +1,9 @@
+# Event routing rules for the ingest pipeline.
+#
+# snowflake: CloudEvents `type` values that are routed to the Snowflake
+#            Firehose stream. All other event types are routed to S3 only.
+#
+# To add a new event type to Snowflake, append it to the list and redeploy.
+
+snowflake:
+  - ecommerce_clicks

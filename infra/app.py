@@ -20,6 +20,7 @@ demo defaults. Nothing secret is hard-coded here.
 from pathlib import Path
 
 import aws_cdk as cdk
+import yaml
 from dotenv import dotenv_values
 from stacks.analyst_stack import AnalystStack
 from stacks.ingest_stack import IngestStack
@@ -30,6 +31,9 @@ from stacks.snowflake_secret_stack import SnowflakeSecretStack
 config = dotenv_values(Path(__file__).resolve().parents[1] / ".env")
 
 repo_root = Path(__file__).resolve().parents[1]
+
+routing = yaml.safe_load((Path(__file__).parent / "routing.yaml").read_text())
+snowflake_event_types: list[str] = routing.get("snowflake", [])
 
 app = cdk.App()
 
@@ -48,6 +52,7 @@ ingest = IngestStack(
     f"{prefix}-ingest",
     prefix=prefix,
     snowflake_secret=snowflake_secret.secret,
+    snowflake_event_types=snowflake_event_types,
     env=env,
 )
 

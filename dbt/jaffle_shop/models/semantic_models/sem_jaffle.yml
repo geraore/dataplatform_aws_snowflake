@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: sem_jaffle
+    description: >
+      Snowflake native Semantic View over the gold marts, queryable by Cortex
+      Analyst. Exposes customers, orders, order_items, and products with their
+      relationships, facts, dimensions, and pre-defined metrics.

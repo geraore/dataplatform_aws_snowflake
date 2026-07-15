@@ -31,10 +31,18 @@ seeds:
 
 models:
   jaffle_shop:
-      materialized: table
+      +materialized: table
       +database: GOLD
       +schema: MARTS
       staging:
         materialized: view
         +database: SILVER
         +schema: STAGING
+      marts:
+        materialized: table
+        +database: GOLD
+        +schema: MARTS
+      semantic_models:
+        materialized: table
+        +database: GOLD
+        +schema: MARTS

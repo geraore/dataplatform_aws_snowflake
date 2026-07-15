@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: dim_stores
+    description: One row per physical store location.
+
+    columns:
+      - name: store_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: name
+        description: Store display name.
+        tests:
+          - not_null
+
+      - name: city
+        description: City where the store is located.
+        tests:
+          - not_null
+
+      - name: state
+        description: State or territory where the store is located.
+
+      - name: country
+        description: Country where the store is located.
+        tests:
+          - not_null

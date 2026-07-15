@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: fact_order_items
+    description: >
+      One row per order line item at the most granular grain.
+      Join to fact_orders for order-level context (customer, date, status)
+      and to dim_products for product attributes (name, category).
+
+    columns:
+      - name: order_item_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: order_id
+        description: Foreign key to fact_orders.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('fact_orders')
+              field: order_id
+
+      - name: product_id
+        description: Foreign key to dim_products.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: product_id
+
+      - name: quantity
+        description: Number of units of the product in this line item.
+        tests:
+          - not_null
+
+      - name: unit_price
+        description: Unit price (AUD) sourced from dim_products at build time.
+        tests:
+          - not_null
+
+      - name: line_total
+        description: Total line value (AUD) — quantity multiplied by unit price.

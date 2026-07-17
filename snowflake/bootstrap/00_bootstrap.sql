@@ -98,5 +98,9 @@ GRANT ROLE FIREHOSE_ROLE TO USER FIREHOSE_USER;
 -- The landing table and its grants to FIREHOSE_ROLE are created by schemachange
 -- (V1.1.6__firehose_landing.sql), which runs after this bootstrap.
 
+-- Allow schemachange to create storage integrations (needed for V1.1.9).
+-- CREATE INTEGRATION is an account-level privilege that requires ACCOUNTADMIN.
+GRANT CREATE INTEGRATION ON ACCOUNT TO ROLE SCHEMACHANGE_ROLE;
+
 USE ROLE SECURITYADMIN;
 GRANT MANAGE GRANTS ON ACCOUNT TO ROLE SCHEMACHANGE_ROLE;

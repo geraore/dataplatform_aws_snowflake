@@ -370,8 +370,55 @@ class IngestStack(Stack):
             )
         )
 
+        # --- Snowflake S3 Storage Integration role ---------------------------------
+        # Snowflake assumes this role to read the events bucket for COPY commands.
+        #
+        # Two-step bootstrap (chicken-and-egg with Snowflake trust relationship):
+        #   1. Deploy with placeholder context → role is created, copy its ARN.
+        #   2. Run schemachange V1.1.9 (CREATE STORAGE INTEGRATION) using that ARN.
+        #   3. In Snowflake: DESC INTEGRATION EVENTS_S3_INT — copy the two values:
+        #        STORAGE_AWS_IAM_USER_ARN  → CDK context key snowflake_iam_user_arn
+        #        STORAGE_AWS_EXTERNAL_ID   → CDK context key snowflake_external_id
+        #   4. Redeploy — the trust policy is locked to the Snowflake-specific principal.
+        sf_iam_user_arn = self.node.try_get_context("snowflake_iam_user_arn")
+        sf_external_id = self.node.try_get_context("snowflake_external_id")
+
+        snowflake_s3_role = iam.Role(
+            self,
+            "SnowflakeS3Role",
+            role_name=f"{prefix}-snowflake-s3-role",
+            assumed_by=iam.AccountRootPrincipal(),
+            description="Assumed by Snowflake storage integration - read-only on events bucket",
+        )
+        # Only override the trust policy once the real Snowflake principal is known
+        # (step 4 of the two-step bootstrap). Before that, the role trusts the
+        # account root so CloudFormation can create it successfully.
+        if sf_iam_user_arn and sf_external_id:
+            snowflake_s3_role.node.default_child.assume_role_policy_document = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {"AWS": sf_iam_user_arn},
+                        "Action": "sts:AssumeRole",
+                        "Condition": {"StringEquals": {"sts:ExternalId": sf_external_id}},
+                    }
+                ],
+            }
+        events_bucket.grant_read(snowflake_s3_role)
+
         # Expose the invoke URL for the verification curl.
         self.api_url = api.url
         CfnOutput(self, "EventsEndpoint", value=f"{api.url}events")
         CfnOutput(self, "EventBusName", value=bus.event_bus_name)
         CfnOutput(self, "EventsBucketName", value=events_bucket.bucket_name)
+        CfnOutput(self, "EventsBucketArn", value=events_bucket.bucket_arn)
+        # Used in V1.1.9 CREATE STORAGE INTEGRATION and again after DESC INTEGRATION
+        # to fill in the snowflake_iam_user_arn / snowflake_external_id context keys.
+        CfnOutput(self, "SnowflakeS3RoleArn", value=snowflake_s3_role.role_arn)
+        # Reminder of the Snowflake delivery stream name for reference.
+        CfnOutput(
+            self,
+            "SnowflakeDeliveryStreamName",
+            value=delivery_stream.delivery_stream_name,
+        )

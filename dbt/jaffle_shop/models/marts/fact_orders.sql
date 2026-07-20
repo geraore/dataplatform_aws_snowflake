@@ -2,13 +2,13 @@
 
 with orders as (
 
-    select * from {{ ref('stg_orders') }}
+    select * from {{ ref('orders') }}
 
 ),
 
 payments as (
 
-    select * from {{ ref('stg_payments') }}
+    select * from {{ ref('payments') }}
 
 ),
 

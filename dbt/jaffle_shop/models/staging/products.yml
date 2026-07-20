@@ -1,15 +1,18 @@
 version: 2
 
 models:
-  - name: stg_customers
+  - name: products
     columns:
-      - name: customer_id
+      - name: product_id
         tests:
           - unique
           - not_null
-      - name: first_name
+      - name: name
         tests:
           - not_null
-      - name: last_name
+      - name: category
+        tests:
+          - not_null
+      - name: price
         tests:
           - not_null

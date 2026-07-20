@@ -1,18 +1,21 @@
 version: 2
 
 models:
-  - name: stg_order_items
+  - name: stores
     columns:
-      - name: order_item_id
+      - name: store_id
         tests:
           - unique
           - not_null
-      - name: order_id
+      - name: name
         tests:
           - not_null
-      - name: product_id
+      - name: city
         tests:
           - not_null
-      - name: quantity
+      - name: state
+        tests:
+          - not_null
+      - name: country
         tests:
           - not_null

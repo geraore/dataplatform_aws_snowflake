@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_payments
+  - name: payments
     columns:
       - name: payment_id
         tests:

@@ -1,4 +1,4 @@
-event_type: com.dataplatform.ecommerce.customer.upserted
+event_type: com.dataplatform.ecommerce.customer.upsert
 source: //dataplatform/crm
 
 data:

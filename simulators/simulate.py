@@ -165,8 +165,16 @@ def _load(name: str) -> dict:
         return yaml.safe_load(f)
 
 
+# Root entities must appear before dependents so their sequence pools are
+# populated before any reference generator runs on the first cycle.
+_TEMPLATE_ORDER = ["customer", "store", "product", "order", "order_item", "payment"]
+
+
 def _all_template_names() -> list[str]:
-    return sorted(p.stem for p in TEMPLATES_DIR.glob("*.yml"))
+    present = {p.stem for p in TEMPLATES_DIR.glob("*.yml")}
+    ordered = [name for name in _TEMPLATE_ORDER if name in present]
+    ordered += sorted(present - set(ordered))
+    return ordered
 
 
 # ---------------------------------------------------------------------------

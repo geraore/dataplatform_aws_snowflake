@@ -1,4 +1,4 @@
-event_type: com.dataplatform.ecommerce.payment.processed
+event_type: com.dataplatform.ecommerce.payment.upsert
 source: //dataplatform/payment-service
 
 data:

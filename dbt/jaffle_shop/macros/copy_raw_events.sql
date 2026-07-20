@@ -18,13 +18,16 @@
 
   Parameters
   ----------
-  event_type  string  CloudEvent type value used as the S3 prefix, e.g.
-                      'com.dataplatform.ecommerce.customer.upserted'.
+  event_type  string  Entity-level S3 prefix — the CloudEvent type up to but
+                      not including the action suffix (.upsert / .delete), e.g.
+                      'com.dataplatform.ecommerce.customer'.
+                      Firehose strips the action suffix before writing to S3,
+                      so this prefix captures both upsert and delete events.
 
   Usage (in staging model config)
   --------------------------------
   {{ config(
-      pre_hook = "{{ copy_raw_events('com.dataplatform.ecommerce.customer.upserted') }}"
+      pre_hook = "{{ copy_raw_events('com.dataplatform.ecommerce.customer') }}"
   ) }}
 #}
 

@@ -1,4 +1,4 @@
-event_type: com.dataplatform.ecommerce.store.upserted
+event_type: com.dataplatform.ecommerce.store.upsert
 source: //dataplatform/catalog
 
 data:

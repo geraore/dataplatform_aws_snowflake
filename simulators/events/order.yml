@@ -1,4 +1,4 @@
-event_type: com.dataplatform.ecommerce.order.upserted
+event_type: com.dataplatform.ecommerce.order.upsert
 source: //dataplatform/order-service
 
 data:

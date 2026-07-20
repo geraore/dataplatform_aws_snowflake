@@ -1,7 +1,7 @@
 {{ config(
     materialized = 'incremental',
     unique_key   = 'payment_id',
-    pre_hook     = "{{ copy_raw_events('com.dataplatform.ecommerce.payment.processed') }}"
+    pre_hook     = "{{ copy_raw_events('com.dataplatform.ecommerce.payment') }}"
 ) }}
 
 {{ staging_scd1(unique_key='payment_id') }}

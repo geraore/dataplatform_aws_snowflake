@@ -1,0 +1,28 @@
+event_type: com.dataplatform.ecommerce.product.upserted
+source: //dataplatform/catalog
+
+data:
+  product_id:
+    type: sequence
+    start: 1
+  name:
+    type: choice
+    values:
+      - Jaffle Classic
+      - Jaffle Supreme
+      - Jaffle Veggie
+      - Flat White
+      - Long Black
+      - Cappuccino
+      - Smashed Avo Jaffle
+      - BBQ Pulled Pork Jaffle
+      - Lemonade
+      - Sparkling Water
+  category:
+    type: choice
+    values: [Sandwiches, Coffee, Beverages, Snacks, Desserts]
+  price:
+    type: float
+    min: 3.50
+    max: 18.00
+    decimals: 2

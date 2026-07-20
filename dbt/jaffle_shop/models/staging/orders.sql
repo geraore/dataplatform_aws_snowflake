@@ -1,24 +1,7 @@
-with source as (
+{{ config(
+    materialized = 'incremental',
+    unique_key   = 'order_id',
+    pre_hook     = "{{ copy_raw_events('com.dataplatform.ecommerce.order.upserted') }}"
+) }}
 
-    {#-
-    Normally we would select from the table here, but we are using seeds to load
-    our data in this project
-    #}
-    select * from {{ ref('raw_orders') }}
-
-),
-
-renamed as (
-
-    select
-        id as order_id,
-        user_id as customer_id,
-        store_id,
-        order_date,
-        status
-
-    from source
-
-)
-
-select * from renamed
+{{ staging_scd1(unique_key='order_id') }}

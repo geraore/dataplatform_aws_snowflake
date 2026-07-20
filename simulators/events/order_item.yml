@@ -1,0 +1,21 @@
+event_type: com.dataplatform.ecommerce.order_item.upserted
+source: //dataplatform/order-service
+
+data:
+  order_item_id:
+    type: sequence
+    start: 1
+  order_id:
+    type: reference
+    from: order_id
+    min: 1
+    max: 1000
+  product_id:
+    type: reference
+    from: product_id
+    min: 1
+    max: 50
+  quantity:
+    type: int
+    min: 1
+    max: 5

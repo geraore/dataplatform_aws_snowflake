@@ -1,20 +1,7 @@
-with source as (
+{{ config(
+    materialized = 'incremental',
+    unique_key   = 'store_id',
+    pre_hook     = "{{ copy_raw_events('com.dataplatform.ecommerce.store.upserted') }}"
+) }}
 
-    select * from {{ ref('raw_stores') }}
-
-),
-
-renamed as (
-
-    select
-        id as store_id,
-        name,
-        city,
-        state,
-        country
-
-    from source
-
-)
-
-select * from renamed
+{{ staging_scd1(unique_key='store_id') }}

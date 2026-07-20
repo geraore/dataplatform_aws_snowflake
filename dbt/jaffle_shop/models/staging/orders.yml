@@ -4,19 +4,28 @@ models:
   - name: orders
     columns:
       - name: order_id
+        data_type: integer
         tests:
           - unique
           - not_null
       - name: customer_id
+        data_type: integer
         tests:
           - not_null
       - name: store_id
+        data_type: integer
         tests:
           - not_null
       - name: order_date
+        data_type: date
         tests:
           - not_null
       - name: status
+        data_type: varchar
         tests:
           - accepted_values:
               values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+      - name: ce_time
+        data_type: timestamp_tz
+        tests:
+          - not_null

@@ -1,0 +1,19 @@
+event_type: com.dataplatform.ecommerce.store.upserted
+source: //dataplatform/catalog
+
+data:
+  store_id:
+    type: sequence
+    start: 1
+  name:
+    type: faker
+    method: company
+  city:
+    type: faker
+    method: city
+  state:
+    type: choice
+    values: [NSW, VIC, QLD, WA, SA, ACT, TAS, NT]
+  country:
+    type: choice
+    values: [Australia]

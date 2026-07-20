@@ -4,16 +4,24 @@ models:
   - name: payments
     columns:
       - name: payment_id
+        data_type: integer
         tests:
           - unique
           - not_null
       - name: order_id
+        data_type: integer
         tests:
           - not_null
       - name: payment_method
+        data_type: varchar
         tests:
           - accepted_values:
               values: ['credit_card', 'coupon', 'bank_transfer', 'gift_card']
       - name: amount
+        data_type: number
+        tests:
+          - not_null
+      - name: ce_time
+        data_type: timestamp_tz
         tests:
           - not_null

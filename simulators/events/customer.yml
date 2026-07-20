@@ -1,0 +1,13 @@
+event_type: com.dataplatform.ecommerce.customer.upserted
+source: //dataplatform/crm
+
+data:
+  customer_id:
+    type: sequence
+    start: 1
+  first_name:
+    type: faker
+    method: first_name
+  last_name:
+    type: faker
+    method: last_name

@@ -1,19 +1,7 @@
-with source as (
+{{ config(
+    materialized = 'incremental',
+    unique_key   = 'product_id',
+    pre_hook     = "{{ copy_raw_events('com.dataplatform.ecommerce.product.upserted') }}"
+) }}
 
-    select * from {{ ref('raw_products') }}
-
-),
-
-renamed as (
-
-    select
-        id as product_id,
-        name,
-        category,
-        price
-
-    from source
-
-)
-
-select * from renamed
+{{ staging_scd1(unique_key='product_id') }}

@@ -6,7 +6,6 @@ version: '0.1'
 profile: 'jaffle_shop'
 
 model-paths: ["models"]
-seed-paths: ["seeds"]
 test-paths: ["tests"]
 analysis-paths: ["analysis"]
 macro-paths: ["macros"]
@@ -20,29 +19,25 @@ clean-targets:
 require-dbt-version: [">=1.0.0", "<2.0.0"]
 
 # Medallion routing. DBT_ROLE is read-write on BRONZE, SILVER and GOLD:
-#   seeds  -> BRONZE.RAW       (raw landing)
-#   stg_*  -> SILVER.STAGING   (cleaned/conformed, dbt-built views)
-#   marts  -> GOLD.MARTS       (curated tables + semantic views)
+#   staging/* -> SILVER.STAGING  (incremental SCD-1, pre-hook COPY from S3)
+#   marts/*   -> GOLD.MARTS      (curated tables + semantic views)
+# Raw tables in BRONZE.RAW are created by schemachange (V1.1.11) and loaded
+# by COPY commands running as dbt pre-hooks on each staging model.
 # See macros/get_custom_names.sql, which makes +database / +schema literal.
-seeds:
-  jaffle_shop:
-    +database: BRONZE
-    +schema: RAW
-
 models:
   jaffle_shop:
       +materialized: table
       +database: GOLD
       +schema: MARTS
       staging:
-        materialized: view
+        +materialized: incremental
         +database: SILVER
         +schema: STAGING
       marts:
-        materialized: table
+        +materialized: table
         +database: GOLD
         +schema: MARTS
       semantic_models:
-        materialized: table
+        +materialized: table
         +database: GOLD
         +schema: MARTS

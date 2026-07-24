@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: sv_fact_orders
+    description: >
+      Secured view over fact_orders. Row access filtered by entitlements
+      (resource = 'order'). All payment-amount columns masked unless
+      access_level >= 2.
+    config:
+      row_access_policy: 'GOVERNANCE.SECURITY.RAP_ORDER on (order_id)'
+      post_hook:
+        - "{{ apply_column_masking(this, model) }}"
+    columns:
+      - name: order_id
+        description: Primary key.
+      - name: customer_id
+        description: Foreign key to sv_dim_customers.
+      - name: store_id
+        description: Foreign key to sv_dim_stores.
+      - name: order_date
+        description: Date the order was placed.
+      - name: status
+        description: Order fulfilment status.
+      - name: credit_card_amount
+        data_type: number
+        description: "Financial. Credit-card portion (AUD). Visible at access_level >= 2, else NULL."
+        config:
+          meta:
+            security:
+              resource: order
+      - name: coupon_amount
+        data_type: number
+        description: "Financial. Coupon portion (AUD). Visible at access_level >= 2, else NULL."
+        config:
+          meta:
+            security:
+              resource: order
+      - name: bank_transfer_amount
+        data_type: number
+        description: "Financial. Bank-transfer portion (AUD). Visible at access_level >= 2, else NULL."
+        config:
+          meta:
+            security:
+              resource: order
+      - name: gift_card_amount
+        data_type: number
+        description: "Financial. Gift-card portion (AUD). Visible at access_level >= 2, else NULL."
+        config:
+          meta:
+            security:
+              resource: order
+      - name: amount
+        data_type: number
+        description: "Financial. Total order amount (AUD). Visible at access_level >= 2, else NULL."
+        config:
+          meta:
+            security:
+              resource: order

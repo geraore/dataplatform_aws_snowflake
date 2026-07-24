@@ -95,10 +95,10 @@ with source as (
     from {{ raw_source }}
     {%- if is_incremental() %}
 
-    where record_content:time::TIMESTAMP_TZ >= (
+    where record_content:time::TIMESTAMP_TZ >= coalesce((
         select dateadd('second', -{{ lookback_seconds }}, max({{ ce_time_col }}))
         from {{ this }}
-    )
+    ), '1970-01-01'::TIMESTAMP_TZ)
     {%- endif %}
 
     qualify row_number() over (

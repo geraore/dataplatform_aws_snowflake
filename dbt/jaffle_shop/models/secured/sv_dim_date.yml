@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: sv_dim_date
+    description: >
+      Secured view over dim_date. No row or column restrictions — all callers
+      with SELECT on this view see the full calendar dimension.
+    columns:
+      - name: date_day
+        description: Calendar date (primary key).
+      - name: year
+        description: Calendar year.
+      - name: quarter
+        description: Calendar quarter (1–4).
+      - name: month
+        description: Month number (1–12).
+      - name: month_name
+        description: Abbreviated month name.
+      - name: week_of_year
+        description: ISO week number.
+      - name: day_of_month
+        description: Day within the month.
+      - name: day_of_week
+        description: Day of week (0=Sunday, 6=Saturday).
+      - name: day_name
+        description: Abbreviated day name.
+      - name: is_weekend
+        description: True if the date falls on a weekend.

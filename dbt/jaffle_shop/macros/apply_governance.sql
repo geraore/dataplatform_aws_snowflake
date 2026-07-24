@@ -1,24 +1,20 @@
 {#
-    Attach the ABAC masking policy (from snowflake/V1.1.5) to PII columns on the
-    gold marts. Run after `dbt build`:
+    apply_governance — superseded by the secured views in models/secured/.
 
-        dbt run-operation apply_governance
+    The secured views (sv_dim_*, sv_fact_*) carry their own post-hooks that
+    attach Snowflake row access policies and column masking policies driven by
+    GOVERNANCE.SECURITY.ENTITLEMENTS.  Security infrastructure (policies) is
+    created automatically via on-run-start → create_security_infrastructure().
 
-    The policy itself is owned by schemachange; here we only bind it to the
-    columns dbt materializes, so re-running a model does not lose the binding.
+    This macro is kept for backwards compatibility with any existing runbooks.
+    It is now a no-op; run `dbt run --select secured` to rebuild the views and
+    reattach all policies.
 #}
 
 {% macro apply_governance() %}
-    {% set statements = [
-        "ALTER TABLE GOLD.MARTS.DIM_CUSTOMERS
-            MODIFY COLUMN first_name SET MASKING POLICY GOVERNANCE.SECURITY.MASK_PII_STRING",
-        "ALTER TABLE GOLD.MARTS.DIM_CUSTOMERS
-            MODIFY COLUMN last_name SET MASKING POLICY GOVERNANCE.SECURITY.MASK_PII_STRING"
-    ] %}
-
-    {% for stmt in statements %}
-        {% do log("Applying: " ~ stmt, info=true) %}
-        {% do run_query(stmt) %}
-    {% endfor %}
-    {% do log("Governance policies applied.", info=true) %}
+    {% do log(
+        "apply_governance is a no-op. Policies are attached via post-hooks on "
+        ~ "the secured views (models/secured/). Run: dbt run --select secured",
+        info=true
+    ) %}
 {% endmacro %}

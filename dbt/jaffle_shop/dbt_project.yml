@@ -19,8 +19,9 @@ clean-targets:
 require-dbt-version: [">=1.0.0", "<2.0.0"]
 
 # Medallion routing. DBT_ROLE is read-write on BRONZE, SILVER and GOLD:
-#   staging/* -> SILVER.STAGING  (incremental SCD-1, pre-hook COPY from S3)
-#   marts/*   -> GOLD.MARTS      (curated tables + semantic views)
+#   staging/*  -> SILVER.STAGING  (incremental SCD-1, pre-hook COPY from S3)
+#   marts/*    -> GOLD.MARTS      (curated tables + semantic views)
+#   secured/*  -> GOLD.MARTS      (secure views with row access + column masking)
 # Raw tables in BRONZE.RAW are created by schemachange (V1.1.11) and loaded
 # by COPY commands running as dbt pre-hooks on each staging model.
 # See macros/get_custom_names.sql, which makes +database / +schema literal.
@@ -39,5 +40,10 @@ models:
         +schema: MARTS
       semantic_models:
         +materialized: table
+        +database: GOLD
+        +schema: MARTS
+      secured:
+        +materialized: view
+        +secure: true
         +database: GOLD
         +schema: MARTS

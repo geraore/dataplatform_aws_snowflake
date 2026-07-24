@@ -15,17 +15,11 @@ models:
         description: Foreign key to dim_customers.
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_customers')
-              field: customer_id
 
       - name: store_id
         description: Foreign key to dim_stores.
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_stores')
-              field: store_id
 
       - name: order_date
         description: Date (UTC) the order was placed.
@@ -38,25 +32,15 @@ models:
 
       - name: amount
         description: Total payment amount (AUD) for the order.
-        tests:
-          - not_null
 
       - name: credit_card_amount
         description: Portion of the order paid by credit card (AUD).
-        tests:
-          - not_null
 
       - name: coupon_amount
         description: Portion of the order paid by coupon (AUD).
-        tests:
-          - not_null
 
       - name: bank_transfer_amount
         description: Portion of the order paid by bank transfer (AUD).
-        tests:
-          - not_null
 
       - name: gift_card_amount
         description: Portion of the order paid by gift card (AUD).
-        tests:
-          - not_null

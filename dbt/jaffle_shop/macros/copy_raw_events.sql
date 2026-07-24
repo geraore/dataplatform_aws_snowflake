@@ -39,7 +39,7 @@ FROM (
         CURRENT_TIMESTAMP(),
         metadata$filename,
         $1::VARIANT
-    FROM @BRONZE.RAW.EVENTS_S3_STAGE/events/{{ event_type }}/
+    FROM @BRONZE.RAW.EVENTS_S3_STAGE/{{ event_type }}/
 )
 FILE_FORMAT = (TYPE = JSON STRIP_OUTER_ARRAY = FALSE)
 ON_ERROR = CONTINUE

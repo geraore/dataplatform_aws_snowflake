@@ -22,7 +22,3 @@ SELECT
     ingested_at
 FROM {{ source('raw', 'events') }}
 WHERE record_content:type::VARCHAR = 'ecommerce_clicks'
-QUALIFY ROW_NUMBER() OVER (
-    PARTITION BY record_content:data:click_id::VARCHAR
-    ORDER BY record_content:time::TIMESTAMP_TZ DESC
-) = 1

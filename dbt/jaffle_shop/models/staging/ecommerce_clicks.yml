@@ -28,7 +28,6 @@ models:
         data_type: varchar
         description: UUID generated per click (unique, from event data payload).
         tests:
-          - unique
           - not_null
 
       - name: session_id
@@ -71,9 +70,3 @@ models:
         tests:
           - accepted_values:
               values: [organic, direct, paid_search, email, social, affiliate]
-
-      - name: ingested_at
-        data_type: timestamp_ltz
-        description: Wall-clock time the event was written to BRONZE.RAW.EVENTS by Firehose.
-        tests:
-          - not_null

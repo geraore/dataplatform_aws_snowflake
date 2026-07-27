@@ -1,0 +1,24 @@
+event_type: com.dataplatform.ecommerce.order.upsert
+source: //dataplatform/order-service
+
+data:
+  order_id:
+    type: int
+    min: 1
+    max: 1000
+  customer_id:
+    type: reference
+    from: customer_id
+    min: 1
+    max: 1000
+  store_id:
+    type: reference
+    from: store_id
+    min: 1
+    max: 20
+  order_date:
+    type: faker
+    method: date_this_year
+  status:
+    type: choice
+    values: [placed, shipped, completed, return_pending, returned]

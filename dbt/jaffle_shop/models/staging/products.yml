@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: products
+    columns:
+      - name: product_id
+        data_type: integer
+        tests:
+          - unique
+          - not_null
+      - name: name
+        data_type: varchar
+        tests:
+          - not_null
+      - name: category
+        data_type: varchar
+        tests:
+          - not_null
+      - name: price
+        data_type: number
+        tests:
+          - not_null
+      - name: ce_time
+        data_type: timestamp_tz
+        tests:
+          - not_null

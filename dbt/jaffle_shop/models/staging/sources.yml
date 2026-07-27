@@ -1,0 +1,36 @@
+version: 2
+
+sources:
+  - name: raw
+    database: BRONZE
+    schema: RAW
+    description: >
+      Entity raw tables in BRONZE.RAW. Created by schemachange (V1.1.11) and
+      loaded by COPY commands running as dbt pre-hooks on each staging model,
+      pulling from @BRONZE.RAW.EVENTS_S3_STAGE partitioned by CloudEvent type.
+
+    tables:
+      - name: customers
+        description: "Raw customer events (com.dataplatform.ecommerce.customer.upserted)"
+
+      - name: order_items
+        description: "Raw order-item events (com.dataplatform.ecommerce.order_item.upserted)"
+
+      - name: orders
+        description: "Raw order events (com.dataplatform.ecommerce.order.upserted)"
+
+      - name: payments
+        description: "Raw payment events (com.dataplatform.ecommerce.payment.processed)"
+
+      - name: products
+        description: "Raw product events (com.dataplatform.ecommerce.product.upserted)"
+
+      - name: stores
+        description: "Raw store events (com.dataplatform.ecommerce.store.upserted)"
+
+      - name: events
+        description: >
+          Firehose Snowpipe Streaming landing table. Receives event types listed
+          in infra/routing.yaml (currently ecommerce_clicks). Each row is one
+          CloudEvent stored as a VARIANT in record_content, plus Firehose
+          metadata in record_metadata.

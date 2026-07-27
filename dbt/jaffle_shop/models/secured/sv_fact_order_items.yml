@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: sv_fact_order_items
+    description: >
+      Secured view over fact_order_items. Row access filtered by entitlements
+      (resource = 'order_item'). unit_price and line_total masked unless
+      access_level >= 2.
+    config:
+      row_access_policy: 'GOVERNANCE.SECURITY.RAP_ORDER_ITEM on (order_item_id)'
+      post_hook:
+        - "{{ apply_column_masking(this, model) }}"
+    columns:
+      - name: order_item_id
+        description: Primary key.
+      - name: order_id
+        description: Foreign key to sv_fact_orders.
+      - name: product_id
+        description: Foreign key to sv_dim_products.
+      - name: quantity
+        description: Number of units in this line item.
+      - name: unit_price
+        data_type: number
+        description: "Financial. Unit price (AUD). Visible at access_level >= 2, else NULL."
+        config:
+          meta:
+            security:
+              resource: order_item
+      - name: line_total
+        data_type: number
+        description: "Financial. Line total (AUD). Visible at access_level >= 2, else NULL."
+        config:
+          meta:
+            security:
+              resource: order_item

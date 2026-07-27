@@ -1,0 +1,8 @@
+[project]
+name = "smoke-tests"
+version = "0.1.0"
+description = "Smoke tests for the dataplatform Events and Analyst APIs"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32",
+]

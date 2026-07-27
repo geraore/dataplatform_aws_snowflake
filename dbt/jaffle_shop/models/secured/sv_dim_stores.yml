@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: sv_dim_stores
+    description: >
+      Secured view over dim_stores. Row access filtered by entitlements
+      (resource = 'store'). No column-level masking.
+    config:
+      row_access_policy: 'GOVERNANCE.SECURITY.RAP_STORE on (store_id)'
+    columns:
+      - name: store_id
+        description: Primary key.
+      - name: name
+        description: Store display name.
+      - name: city
+        description: City where the store is located.
+      - name: state
+        description: State or territory.
+      - name: country
+        description: Country.

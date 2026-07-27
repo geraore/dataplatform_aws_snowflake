@@ -1,0 +1,51 @@
+# Local Airflow for the data platform demo.
+# Single-node "standalone" Airflow (SQLite + SequentialExecutor) — enough to
+# author and run the demo DAG locally. Started via run_airflow_local.sh.
+#
+# Built from ./Dockerfile: the Snowflake provider + Cosmos go in the Airflow env
+# (constraints-pinned), dbt-snowflake in an isolated venv. This replaces a
+# runtime `pip install` that used to backtrack for a very long time.
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dataplatform-airflow-local
+    container_name: dataplatform-airflow-local
+    restart: unless-stopped
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      # Point the DAG at the mounted dbt project.
+      DBT_PROJECT_DIR: /opt/project/dbt/jaffle_shop
+      DBT_PROFILES_DIR: /opt/project/dbt/jaffle_shop
+      # Snowflake connection injected as a JSON env connection (see run script).
+      AIRFLOW_CONN_SNOWFLAKE_DEFAULT: ${AIRFLOW_CONN_SNOWFLAKE_DEFAULT:-}
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT:-}
+      DBT_PRIVATE_KEY_PATH: /opt/project/secrets/dbt_key.p8
+      # Passphrase for the private key (empty if the key is unencrypted). Used by
+      # both the dbt build (profiles.yml) and the snowflake_default connection.
+      DBT_PRIVATE_KEY_PASSPHRASE: ${DBT_PRIVATE_KEY_PASSPHRASE:-}
+      # Fixed admin login for the standalone UI (defaults to "admin" if unset).
+      # Seeded into standalone_admin_password.txt by the command below so
+      # `airflow standalone` uses it instead of a random one.
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ../dbt:/opt/project/dbt
+      - ./.airflow/logs:/opt/airflow/logs
+      # Host dir holding the private keys, mounted read-only. Defaults to the
+      # repo-root .secrets/ (where the keys already live); override with the
+      # HOST_SECRETS_DIR env var. dbt_key.p8 inside it is DBT_USER's key.
+      - ${HOST_SECRETS_DIR:-../.secrets}:/opt/project/secrets:ro
+    ports:
+      - "8080:8080"
+    # Seed the admin password file from AIRFLOW_ADMIN_PASSWORD before starting,
+    # then hand off to `airflow standalone` (which honours that file instead of
+    # generating a random password, and resets the admin user to match).
+    # $$ escapes compose interpolation so the *container* env var is used.
+    command:
+      - bash
+      - -c
+      - >-
+        printf '%s' "$$AIRFLOW_ADMIN_PASSWORD" > "$${AIRFLOW_HOME:-/opt/airflow}/standalone_admin_password.txt";
+        exec airflow standalone

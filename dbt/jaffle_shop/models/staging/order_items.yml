@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: order_items
+    columns:
+      - name: order_item_id
+        data_type: integer
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        data_type: integer
+        tests:
+          - not_null
+      - name: product_id
+        data_type: integer
+        tests:
+          - not_null
+      - name: quantity
+        data_type: integer
+        tests:
+          - not_null
+      - name: ce_time
+        data_type: timestamp_tz
+        tests:
+          - not_null

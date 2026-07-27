@@ -1,0 +1,14 @@
+event_type: com.dataplatform.ecommerce.customer.upsert
+source: //dataplatform/crm
+
+data:
+  customer_id:
+    type: int
+    min: 1
+    max: 1000
+  first_name:
+    type: faker
+    method: first_name
+  last_name:
+    type: faker
+    method: last_name

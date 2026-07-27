@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: sem_jaffle_secured
+    description: >
+      Secured semantic view over the jaffle shop gold marts. Targets the sv_*
+      secured views so that ABAC column-masking and row-access policies defined
+      in GOVERNANCE.SECURITY are enforced when queried via Cortex Analyst.

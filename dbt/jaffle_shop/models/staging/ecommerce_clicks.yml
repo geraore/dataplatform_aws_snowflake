@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: ecommerce_clicks
+    description: >
+      Streaming staging layer for ecommerce click events.
+      Reads directly from BRONZE.RAW.EVENTS (Firehose Snowpipe Streaming) and
+      refreshes automatically every minute via Snowflake-managed dynamic table.
+      Deduplicates by click_id, keeping the latest event per click.
+    columns:
+      - name: ce_id
+        data_type: varchar
+        description: CloudEvents envelope id (unique per event).
+        tests:
+          - not_null
+
+      - name: ce_time
+        data_type: timestamp_tz
+        description: CloudEvents envelope time (UTC).
+        tests:
+          - not_null
+
+      - name: ce_source
+        data_type: varchar
+        description: CloudEvents envelope source URI.
+
+      - name: click_id
+        data_type: varchar
+        description: UUID generated per click (unique, from event data payload).
+        tests:
+          - not_null
+
+      - name: session_id
+        data_type: integer
+        description: Browse session identifier (1-200 range; sessions are shared across clicks).
+
+      - name: customer_id
+        data_type: integer
+        tests:
+          - not_null
+
+      - name: product_id
+        data_type: integer
+        tests:
+          - not_null
+
+      - name: page_type
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              values: [home, product, cart, checkout, search, category]
+
+      - name: action
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              values: [view, click, add_to_cart, remove_from_cart, checkout, purchase]
+
+      - name: device_type
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              values: [mobile, desktop, tablet]
+
+      - name: referrer
+        data_type: varchar
+        tests:
+          - accepted_values:
+              values: [organic, direct, paid_search, email, social, affiliate]

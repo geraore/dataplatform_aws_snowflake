@@ -1,0 +1,37 @@
+event_type: ecommerce_clicks
+source: //dataplatform/web-tracker
+
+# High-frequency clickstream events routed to Snowflake via Firehose streaming
+# (see infra/routing.yaml).  Run at elevated rate:
+#   uv run python simulate.py -e ecommerce_clicks -r 10.0
+#
+# session_id uses a small int range (1-200) so multiple clicks share sessions,
+# matching real browse behaviour.  click_id is always a UUID (unique per event).
+
+data:
+  click_id:
+    type: uuid
+  session_id:
+    type: int
+    min: 1
+    max: 200
+  customer_id:
+    type: int
+    min: 1
+    max: 1000
+  product_id:
+    type: int
+    min: 1
+    max: 50
+  page_type:
+    type: choice
+    values: [home, product, cart, checkout, search, category]
+  action:
+    type: choice
+    values: [view, click, add_to_cart, remove_from_cart, checkout, purchase]
+  device_type:
+    type: choice
+    values: [mobile, desktop, tablet]
+  referrer:
+    type: choice
+    values: [organic, direct, paid_search, email, social, affiliate]

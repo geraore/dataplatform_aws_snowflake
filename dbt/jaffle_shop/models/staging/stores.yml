@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stores
+    columns:
+      - name: store_id
+        data_type: integer
+        tests:
+          - unique
+          - not_null
+      - name: name
+        data_type: varchar
+        tests:
+          - not_null
+      - name: city
+        data_type: varchar
+        tests:
+          - not_null
+      - name: state
+        data_type: varchar
+        tests:
+          - not_null
+      - name: country
+        data_type: varchar
+        tests:
+          - not_null
+      - name: ce_time
+        data_type: timestamp_tz
+        tests:
+          - not_null

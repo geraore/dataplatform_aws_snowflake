@@ -216,3 +216,32 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# AWS CDK
+infra/cdk.out/
+cdk.out/
+*.cdk.staging/
+# cdk.context.json is CDK's auto-generated cache; it embeds AWS account IDs in
+# key names and gets regenerated on every cdk synth. Intentional context values
+# (snowflake_iam_user_arn, snowflake_external_id) live in cdk.json instead.
+infra/cdk.context.json
+
+# dbt
+dbt/**/target/
+dbt/**/dbt_packages/
+dbt/**/logs/
+dbt/**/.user.yml
+
+# Snowflake / secrets — never commit key material
+*.p8
+*.pem
+rsa_key*
+snowflake_key*
+.secrets/
+
+# Airflow local
+scripts/.airflow/
+logs/
+airflow.db
+airflow.cfg
+webserver_config.py

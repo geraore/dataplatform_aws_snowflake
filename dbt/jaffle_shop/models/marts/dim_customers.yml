@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: One row per customer with derived facts based on their orders and payments.
+
+    columns:
+      - name: customer_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: first_name
+        description: Customer's first name. PII.
+
+      - name: last_name
+        description: Customer's last name. PII.
+
+      - name: first_order
+        description: Date (UTC) of the customer's first order.
+
+      - name: most_recent_order
+        description: Date (UTC) of the customer's most recent order.
+
+      - name: number_of_orders
+        description: Count of orders placed by the customer.
+
+      - name: customer_lifetime_value
+        description: Total payment value (AUD) across all of the customer's orders.

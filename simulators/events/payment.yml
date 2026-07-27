@@ -1,0 +1,21 @@
+event_type: com.dataplatform.ecommerce.payment.upsert
+source: //dataplatform/payment-service
+
+data:
+  payment_id:
+    type: int
+    min: 1
+    max: 2000
+  order_id:
+    type: reference
+    from: order_id
+    min: 1
+    max: 1000
+  payment_method:
+    type: choice
+    values: [credit_card, coupon, bank_transfer, gift_card]
+  amount:
+    type: float
+    min: 5.00
+    max: 200.00
+    decimals: 2

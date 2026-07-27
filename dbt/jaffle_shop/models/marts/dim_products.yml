@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: dim_products
+    description: One row per product with descriptive attributes for filtering and grouping. Aggregate sales metrics are derived by querying fact_order_items.
+
+    columns:
+      - name: product_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: name
+        description: Product display name.
+        tests:
+          - not_null
+
+      - name: category
+        description: Product category (e.g. Sandwiches, Coffee, Drinks, Baked Goods).
+
+      - name: price
+        description: Unit price (AUD).

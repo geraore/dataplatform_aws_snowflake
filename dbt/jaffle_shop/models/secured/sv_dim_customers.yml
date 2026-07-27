@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: sv_dim_customers
+    description: >
+      Secured view over dim_customers. Row access filtered by entitlements
+      (resource = 'customer'). first_name and last_name masked unless
+      access_level >= 1; customer_lifetime_value masked unless access_level >= 2.
+    config:
+      row_access_policy: 'GOVERNANCE.SECURITY.RAP_CUSTOMER on (customer_id)'
+      post_hook:
+        - "{{ apply_column_masking(this, model) }}"
+    columns:
+      - name: customer_id
+        description: Primary key.
+      - name: first_name
+        data_type: varchar
+        description: "PII. Visible at access_level >= 1, else '***'."
+        config:
+          meta:
+            security:
+              resource: customer
+      - name: last_name
+        data_type: varchar
+        description: "PII. Visible at access_level >= 1, else '***'."
+        config:
+          meta:
+            security:
+              resource: customer
+      - name: first_order
+        description: Date of the customer's first order.
+      - name: most_recent_order
+        description: Date of the customer's most recent order.
+      - name: number_of_orders
+        description: Total orders placed by the customer.
+      - name: customer_lifetime_value
+        data_type: number
+        description: "Financial. Total spend (AUD). Visible at access_level >= 2, else NULL."
+        config:
+          meta:
+            security:
+              resource: customer

@@ -28,15 +28,15 @@
 USE ROLE SCHEMACHANGE_ROLE;
 
 CREATE STAGE IF NOT EXISTS BRONZE.RAW.EVENTS_S3_STAGE
-    URL                 = 's3://dataplatform-events-190855935274/events/'
+    URL = 's3://dataplatform-events-190855935274/events/'
     STORAGE_INTEGRATION = EVENTS_S3_INT
-    FILE_FORMAT         = (TYPE = JSON STRIP_OUTER_ARRAY = FALSE)
-    COMMENT             = 'External stage over the events S3 bucket (dynamic-partitioned JSONL)';
+    FILE_FORMAT = (TYPE = JSON STRIP_OUTER_ARRAY = FALSE)
+    COMMENT = 'External stage over the events S3 bucket (dynamic-partitioned JSONL)';
 
 -- DBT_ROLE runs COPY commands in dbt seeds/macros and ad-hoc loads.
-GRANT USAGE  ON STAGE BRONZE.RAW.EVENTS_S3_STAGE TO ROLE DBT_ROLE;
+GRANT USAGE ON STAGE BRONZE.RAW.EVENTS_S3_STAGE TO ROLE DBT_ROLE;
 -- COPY INTO requires INSERT on the target table.
 GRANT INSERT ON TABLE BRONZE.RAW.EVENTS TO ROLE DBT_ROLE;
 
 -- Let SCHEMACHANGE_ROLE also list and query the stage for diagnostics.
-GRANT USAGE  ON STAGE BRONZE.RAW.EVENTS_S3_STAGE TO ROLE SCHEMACHANGE_ROLE;
+GRANT USAGE ON STAGE BRONZE.RAW.EVENTS_S3_STAGE TO ROLE SCHEMACHANGE_ROLE;

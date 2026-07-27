@@ -1,10 +1,9 @@
 import json
 import os
 
-from pydantic import ValidationError
-
 import eventbridge
 from models import CloudEvent
+from pydantic import ValidationError
 
 EVENT_BUS_NAME = os.environ["EVENT_BUS_NAME"]
 EVENT_SOURCE = os.environ["EVENT_SOURCE"]

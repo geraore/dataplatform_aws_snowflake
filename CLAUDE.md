@@ -52,15 +52,17 @@ uv run python simulate.py --dry-run         # print CloudEvents without POSTing
 
 ### Linting (matches CI)
 ```bash
-ruff check infra airflow
-ruff format --check infra airflow
-sqlfluff lint snowflake/
+# From repo root — requires: uv sync --group dev (installs ruff, sqlfluff, mypy)
+uv run ruff check infra airflow smoke_tests simulators
+uv run ruff format --check infra airflow smoke_tests simulators
+uv run sqlfluff lint snowflake/
+uv run mypy infra smoke_tests simulators   # airflow excluded: needs full Airflow env
 dbt parse --profiles-dir ci      # from dbt/jaffle_shop/
 ```
 
 ### API integration tests
 ```bash
-cd platform_api_tests
+cd smoke_tests
 uv run pytest
 ```
 

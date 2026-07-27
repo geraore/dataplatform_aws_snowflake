@@ -7,16 +7,15 @@ Usage:
 import sys
 
 import requests
-
 from config import ANALYST_API_URL, ANALYST_HEADERS
 
 # ── ANSI helpers ──────────────────────────────────────────────────────────────
 
-BOLD  = "\033[1m"
-DIM   = "\033[2m"
-CYAN  = "\033[36m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+CYAN = "\033[36m"
 GREEN = "\033[32m"
-RED   = "\033[31m"
+RED = "\033[31m"
 RESET = "\033[0m"
 
 _W = 60  # section header width
@@ -34,7 +33,7 @@ def _table(rows: list[dict]) -> str:
     widths = {h: max(len(h), max(len(str(r.get(h, ""))) for r in rows)) for h in headers}
 
     def fmt(vals: list) -> str:
-        return "  " + "  ".join(str(v).ljust(widths[h]) for h, v in zip(headers, vals))
+        return "  " + "  ".join(str(v).ljust(widths[h]) for h, v in zip(headers, vals, strict=True))
 
     sep = "  " + "  ".join("─" * widths[h] for h in headers)
     lines = [fmt(headers), sep, *[fmt([r.get(h, "") for h in headers]) for r in rows]]
@@ -62,6 +61,7 @@ def _print_response(body: dict, show_sql: bool) -> None:
 
 # ── API call ──────────────────────────────────────────────────────────────────
 
+
 def _ask(question: str, user_id: int) -> dict:
     resp = requests.post(
         ANALYST_API_URL,
@@ -74,6 +74,7 @@ def _ask(question: str, user_id: int) -> dict:
 
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
+
 
 def _prompt_user_id() -> int:
     while True:
@@ -94,11 +95,12 @@ def _prompt_show_sql() -> bool:
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     print(f"\n  {BOLD}{CYAN}Snowflake Cortex Analyst{RESET}")
     print(f"  {DIM}{ANALYST_API_URL}{RESET}\n")
 
-    user_id  = _prompt_user_id()
+    user_id = _prompt_user_id()
     show_sql = _prompt_show_sql()
 
     print(f"\n  {DIM}Type a question, or 'exit' to quit.{RESET}\n")

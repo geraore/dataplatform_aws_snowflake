@@ -9,13 +9,12 @@ Usage:
 """
 
 import argparse
-import json
 import sys
 import time
 
 import requests
-
-from config import ANALYST_API_URL, ANALYST_HEADERS as AUTH_HEADERS
+from config import ANALYST_API_URL
+from config import ANALYST_HEADERS as AUTH_HEADERS
 
 PASS = "\033[32mPASS\033[0m"
 FAIL = "\033[31mFAIL\033[0m"
@@ -41,6 +40,7 @@ def run(name: str, verbose: bool):
             if verbose:
                 print(f"         {e}")
         return fn
+
     return decorator
 
 
@@ -59,7 +59,8 @@ def _table(rows: list[dict]) -> str:
     widths = {h: max(len(h), max(len(str(r.get(h, ""))) for r in rows)) for h in headers}
 
     def fmt(vals: list) -> str:
-        return "    " + "  ".join(str(v).ljust(widths[h]) for h, v in zip(headers, vals))
+        pairs = zip(headers, vals, strict=True)
+        return "    " + "  ".join(str(v).ljust(widths[h]) for h, v in pairs)
 
     sep = "    " + "  ".join("─" * widths[h] for h in headers)
     lines = [fmt(headers), sep, *[fmt([r.get(h, "") for h in headers]) for r in rows]]
@@ -220,6 +221,7 @@ def test_response_time(verbose: bool):
 #   5 – finance analyst: payments (PII visible), orders
 # ---------------------------------------------------------------------------
 
+
 def test_user_context_user1_data_steward(verbose: bool):
     @run("user 1 (data steward): cross-resource question returns SQL + results", verbose)
     def _():
@@ -228,18 +230,24 @@ def test_user_context_user1_data_steward(verbose: bool):
         body = r.json()
         assert "sql" in body and body["sql"], f"missing or empty 'sql': {body}"
         _print_cortex_response(body)
-        assert "results" in body and isinstance(body["results"], list), f"missing or invalid 'results': {body}"
+        assert "results" in body and isinstance(body["results"], list), (
+            f"missing or invalid 'results': {body}"
+        )
 
 
 def test_user_context_user2_ops_analyst(verbose: bool):
     @run("user 2 (ops analyst): order and product question returns SQL + results", verbose)
     def _():
-        r = _post({"question": "What are the top 10 stores by total number of orders?", "user_id": 2})
+        r = _post(
+            {"question": "What are the top 10 stores by total number of orders?", "user_id": 2}
+        )
         assert r.status_code == 200, f"expected 200, got {r.status_code}: {r.text}"
         body = r.json()
         assert "sql" in body and body["sql"], f"missing or empty 'sql': {body}"
         _print_cortex_response(body)
-        assert "results" in body and isinstance(body["results"], list), f"missing or invalid 'results': {body}"
+        assert "results" in body and isinstance(body["results"], list), (
+            f"missing or invalid 'results': {body}"
+        )
 
 
 def test_user_context_user3_crm_analyst(verbose: bool):
@@ -250,7 +258,9 @@ def test_user_context_user3_crm_analyst(verbose: bool):
         body = r.json()
         assert "sql" in body and body["sql"], f"missing or empty 'sql': {body}"
         _print_cortex_response(body)
-        assert "results" in body and isinstance(body["results"], list), f"missing or invalid 'results': {body}"
+        assert "results" in body and isinstance(body["results"], list), (
+            f"missing or invalid 'results': {body}"
+        )
 
 
 def test_user_context_user4_store_manager(verbose: bool):
@@ -261,18 +271,24 @@ def test_user_context_user4_store_manager(verbose: bool):
         body = r.json()
         assert "sql" in body and body["sql"], f"missing or empty 'sql': {body}"
         _print_cortex_response(body)
-        assert "results" in body and isinstance(body["results"], list), f"missing or invalid 'results': {body}"
+        assert "results" in body and isinstance(body["results"], list), (
+            f"missing or invalid 'results': {body}"
+        )
 
 
 def test_user_context_user5_finance_analyst(verbose: bool):
     @run("user 5 (finance analyst): payment question returns SQL + results", verbose)
     def _():
-        r = _post({"question": "What is the total payment amount processed this month?", "user_id": 5})
+        r = _post(
+            {"question": "What is the total payment amount processed this month?", "user_id": 5}
+        )
         assert r.status_code == 200, f"expected 200, got {r.status_code}: {r.text}"
         body = r.json()
         assert "sql" in body and body["sql"], f"missing or empty 'sql': {body}"
         _print_cortex_response(body)
-        assert "results" in body and isinstance(body["results"], list), f"missing or invalid 'results': {body}"
+        assert "results" in body and isinstance(body["results"], list), (
+            f"missing or invalid 'results': {body}"
+        )
 
 
 def test_missing_user_id(verbose: bool):

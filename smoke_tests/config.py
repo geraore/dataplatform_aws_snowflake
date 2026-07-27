@@ -2,10 +2,10 @@
 
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-EVENTS_API_URL = "https://c0ossmw0xc.execute-api.us-east-2.amazonaws.com/prod/events"
-ANALYST_API_URL = "https://fm7ytstqt0.execute-api.us-east-2.amazonaws.com/prod/ask"
+EVENTS_API_URL = os.environ["EVENTS_API_URL"]
+ANALYST_API_URL = os.environ["ANALYST_API_URL"]
 
 # Demo bearer token configured in both Lambda authorizers.
 # Override via env var DEMO_TOKEN if a custom token was deployed.
@@ -45,7 +45,7 @@ def make_event(
         "id": str(uuid.uuid4()),
         "source": source,
         "type": event_type,
-        "time": datetime.now(timezone.utc).isoformat(),
+        "time": datetime.now(UTC).isoformat(),
     }
     if data is not None:
         event["datacontenttype"] = "application/json"

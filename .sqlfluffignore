@@ -1,5 +1,8 @@
 dbt/
 infra/
 cdk.out/
-# sqlfluff's snowflake dialect cannot yet parse CREATE ROW ACCESS POLICY (as of 4.x).
+# sqlfluff's snowflake dialect cannot yet parse CREATE ROW ACCESS POLICY or
+# GRANT CREATE SEMANTIC VIEW (as of 4.x). Exclude these files until dialect catches up.
 snowflake/scripts/V1.1.5__abac_policies.sql
+snowflake/scripts/V1.1.7__semantic_view_privileges.sql
+snowflake/scripts/V1.1.13__per_resource_policies.sql

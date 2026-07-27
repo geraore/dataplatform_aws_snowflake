@@ -17,15 +17,15 @@ USE ROLE SCHEMACHANGE_ROLE;
 -- --- Warehouse (XS, auto-suspend — Cortex Analyst is serverless but a warehouse
 --     is required for the user session context) ---------------------------------
 CREATE WAREHOUSE IF NOT EXISTS CORTEX_WH
-    WAREHOUSE_SIZE = 'XSMALL'
-    AUTO_SUSPEND = 60
-    AUTO_RESUME = TRUE
-    INITIALLY_SUSPENDED = TRUE
-    COMMENT = 'Used by CORTEX_USER for Cortex Analyst sessions';
+WAREHOUSE_SIZE = 'XSMALL'
+AUTO_SUSPEND = 60
+AUTO_RESUME = TRUE
+INITIALLY_SUSPENDED = TRUE
+COMMENT = 'Used by CORTEX_USER for Cortex Analyst sessions';
 
 -- --- Role + minimal privileges -------------------------------------------------
 CREATE ROLE IF NOT EXISTS CORTEX_ROLE
-    COMMENT = 'Read-only access to GOLD.MARTS semantic views for Cortex Analyst';
+COMMENT = 'Read-only access to GOLD.MARTS semantic views for Cortex Analyst';
 
 GRANT USAGE ON WAREHOUSE CORTEX_WH TO ROLE CORTEX_ROLE;
 
@@ -40,7 +40,7 @@ GRANT SELECT ON ALL DYNAMIC TABLES IN SCHEMA GOLD.MARTS TO ROLE CORTEX_ROLE;
 
 -- Cortex Analyst needs to read the stage that holds the semantic model file.
 CREATE SCHEMA IF NOT EXISTS GOLD.CORTEX
-    COMMENT = 'Internal objects for Cortex Analyst (semantic model stage, etc.)';
+COMMENT = 'Internal objects for Cortex Analyst (semantic model stage, etc.)';
 
 GRANT USAGE ON SCHEMA GOLD.CORTEX TO ROLE CORTEX_ROLE;
 

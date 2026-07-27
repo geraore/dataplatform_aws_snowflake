@@ -23,38 +23,37 @@
 USE ROLE SCHEMACHANGE_ROLE;
 
 CREATE TABLE IF NOT EXISTS BRONZE.RAW.CUSTOMERS (
-    ingested_at    TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
-    source_file    VARCHAR,
+    ingested_at TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+    source_file VARCHAR,
     record_content VARIANT
 );
 
 CREATE TABLE IF NOT EXISTS BRONZE.RAW.ORDER_ITEMS (
-    ingested_at    TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
-    source_file    VARCHAR,
+    ingested_at TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+    source_file VARCHAR,
     record_content VARIANT
 );
 
 CREATE TABLE IF NOT EXISTS BRONZE.RAW.ORDERS (
-    ingested_at    TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
-    source_file    VARCHAR,
+    ingested_at TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+    source_file VARCHAR,
     record_content VARIANT
 );
 
 CREATE TABLE IF NOT EXISTS BRONZE.RAW.PAYMENTS (
-    ingested_at    TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
-    source_file    VARCHAR,
+    ingested_at TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+    source_file VARCHAR,
     record_content VARIANT
 );
 
 CREATE TABLE IF NOT EXISTS BRONZE.RAW.PRODUCTS (
-    ingested_at    TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
-    source_file    VARCHAR,
+    ingested_at TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+    source_file VARCHAR,
     record_content VARIANT
 );
 
 CREATE TABLE IF NOT EXISTS BRONZE.RAW.STORES (
-    ingested_at    TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
-    source_file    VARCHAR,
+    ingested_at TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+    source_file VARCHAR,
     record_content VARIANT
 );
-

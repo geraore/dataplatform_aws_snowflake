@@ -1,9 +1,0 @@
-{
-  "availability-zones:account=190855935274:region=us-east-2": [
-    "us-east-2a",
-    "us-east-2b",
-    "us-east-2c"
-  ],
-  "snowflake_iam_user_arn": "arn:aws:iam::627896767179:user/40dx1000-s",
-  "snowflake_external_id": "ID95883_SFCRole=181_QFXcEBxoAsvkgaTMbCwCrGZokok="
-}

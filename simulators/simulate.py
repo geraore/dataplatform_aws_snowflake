@@ -37,7 +37,7 @@ import random
 import sys
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import requests
@@ -52,10 +52,7 @@ except ImportError:
 
 TEMPLATES_DIR = Path(__file__).parent / "events"
 
-API_URL = os.environ.get(
-    "EVENTS_API_URL",
-    "https://c0ossmw0xc.execute-api.us-east-2.amazonaws.com/prod/events",
-)
+API_URL = os.environ["EVENTS_API_URL"]
 DEMO_TOKEN = os.environ.get("DEMO_TOKEN", "demo-allow-token")
 
 _HEADERS = {
@@ -72,6 +69,7 @@ _sequences: dict[str, int] = {}
 # Value generators
 # ---------------------------------------------------------------------------
 
+
 def _generate(field: str, spec: dict):
     kind = spec.get("type", "uuid")
 
@@ -87,8 +85,8 @@ def _generate(field: str, spec: dict):
         return random.randint(spec.get("min", 1), spec.get("max", 1000))
 
     if kind == "float":
-        val = random.uniform(spec.get("min", 0.0), spec.get("max", 100.0))
-        return round(val, spec.get("decimals", 2))
+        fval = random.uniform(spec.get("min", 0.0), spec.get("max", 100.0))
+        return round(fval, spec.get("decimals", 2))
 
     if kind == "choice":
         return random.choice(spec["values"])
@@ -116,15 +114,13 @@ def _generate(field: str, spec: dict):
 
 
 def _generate_data(template: dict) -> dict:
-    return {
-        field: _generate(field, spec)
-        for field, spec in template.get("data", {}).items()
-    }
+    return {field: _generate(field, spec) for field, spec in template.get("data", {}).items()}
 
 
 # ---------------------------------------------------------------------------
 # CloudEvent construction and delivery
 # ---------------------------------------------------------------------------
+
 
 def _build_event(template: dict, data: dict) -> dict:
     event: dict = {
@@ -132,7 +128,7 @@ def _build_event(template: dict, data: dict) -> dict:
         "id": str(uuid.uuid4()),
         "source": template.get("source", "//dataplatform/simulator"),
         "type": template["event_type"],
-        "time": datetime.now(timezone.utc).isoformat(),
+        "time": datetime.now(UTC).isoformat(),
         "datacontenttype": "application/json",
         "data": data,
     }
@@ -156,6 +152,7 @@ def _post(event: dict) -> int:
 # ---------------------------------------------------------------------------
 # Template loading
 # ---------------------------------------------------------------------------
+
 
 def _load(name: str) -> dict:
     path = TEMPLATES_DIR / f"{name}.yml"
@@ -181,12 +178,13 @@ def _all_template_names() -> list[str]:
 # Simulation loop
 # ---------------------------------------------------------------------------
 
+
 def run(templates: list[dict], rate: float, count: int | None, dry_run: bool) -> None:
     n = len(templates)
     interval = 1.0 / rate if rate > 0 else 0
     sent = 0
 
-    target = f"(dry-run)" if dry_run else API_URL
+    target = "(dry-run)" if dry_run else API_URL
     print(f"Simulating {n} event type(s) at {rate} evt/s → {target}")
     print("Press Ctrl+C to stop.\n")
 
@@ -218,27 +216,31 @@ def run(templates: list[dict], rate: float, count: int | None, dry_run: bool) ->
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Data platform event simulator (CloudEvents 1.0)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "-e", "--event",
+        "-e",
+        "--event",
         nargs="+",
         metavar="NAME",
         help="Template name(s) to simulate (filename without .yml). "
-             "Defaults to all templates in simulators/events/.",
+        "Defaults to all templates in simulators/events/.",
     )
     parser.add_argument(
-        "-r", "--rate",
+        "-r",
+        "--rate",
         type=float,
         default=1.0,
         metavar="FLOAT",
         help="Events per second (default: 1.0). Use 0 for no throttling.",
     )
     parser.add_argument(
-        "-n", "--count",
+        "-n",
+        "--count",
         type=int,
         default=None,
         metavar="INT",

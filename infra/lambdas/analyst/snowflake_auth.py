@@ -24,7 +24,7 @@ def make_jwt(account: str, user: str, private_key, fingerprint: str) -> str:
     account = account.upper()
     user = user.upper()
     qualified = f"{account}.{user}"
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    now = datetime.datetime.now(tz=datetime.UTC)
     payload = {
         "iss": f"{qualified}.{fingerprint}",
         "sub": qualified,

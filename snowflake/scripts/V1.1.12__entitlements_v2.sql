@@ -18,51 +18,51 @@
 
 USE ROLE SCHEMACHANGE_ROLE;
 
-DROP VIEW  IF EXISTS GOVERNANCE.SECURITY.V_ENTITLEMENTS;
+DROP VIEW IF EXISTS GOVERNANCE.SECURITY.V_ENTITLEMENTS;
 DROP TABLE IF EXISTS GOVERNANCE.SECURITY.ENTITLEMENTS;
 
 CREATE TABLE GOVERNANCE.SECURITY.ENTITLEMENTS (
-    user_id      INTEGER         NOT NULL,
-    resource     VARCHAR(64)     NOT NULL,
-    access_level TINYINT         NOT NULL CHECK (access_level IN (0, 1, 2)),
-    object_id    VARCHAR(16)     NOT NULL,
-    updated_at   TIMESTAMP_LTZ   DEFAULT CURRENT_TIMESTAMP(),
+    user_id INTEGER NOT NULL,
+    resource VARCHAR(64) NOT NULL,
+    access_level TINYINT NOT NULL CHECK (access_level IN (0, 1, 2)),
+    object_id VARCHAR(16) NOT NULL,
+    updated_at TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
     CONSTRAINT pk_entitlements PRIMARY KEY (user_id, resource, object_id)
 );
 
 -- user 1: data steward — full read access with PII across all resources
 INSERT INTO GOVERNANCE.SECURITY.ENTITLEMENTS (user_id, resource, access_level, object_id) VALUES
-  (1, 'customer',   2, '*'),
-  (1, 'store',      2, '*'),
-  (1, 'product',    2, '*'),
-  (1, 'order',      2, '*'),
-  (1, 'order_item', 2, '*'),
-  (1, 'payment',    2, '*');
+(1, 'customer', 2, '*'),
+(1, 'store', 2, '*'),
+(1, 'product', 2, '*'),
+(1, 'order', 2, '*'),
+(1, 'order_item', 2, '*'),
+(1, 'payment', 2, '*');
 
 -- user 2: ops analyst — full read on orders/stores/products, no customer or payment access
 INSERT INTO GOVERNANCE.SECURITY.ENTITLEMENTS (user_id, resource, access_level, object_id) VALUES
-  (2, 'store',      2, '*'),
-  (2, 'product',    2, '*'),
-  (2, 'order',      2, '*'),
-  (2, 'order_item', 2, '*');
+(2, 'store', 2, '*'),
+(2, 'product', 2, '*'),
+(2, 'order', 2, '*'),
+(2, 'order_item', 2, '*');
 
 -- user 3: CRM analyst — customer data with PII, read-only orders (no PII beyond what order carries)
 INSERT INTO GOVERNANCE.SECURITY.ENTITLEMENTS (user_id, resource, access_level, object_id) VALUES
-  (3, 'customer',   1, '*'),
-  (3, 'order',      2, '*'),
-  (3, 'order_item', 2, '*');
+(3, 'customer', 1, '*'),
+(3, 'order', 2, '*'),
+(3, 'order_item', 2, '*');
 
 -- user 4: store manager for store 5 — scoped to their own store record, all products, and orders
 INSERT INTO GOVERNANCE.SECURITY.ENTITLEMENTS (user_id, resource, access_level, object_id) VALUES
-  (4, 'store',      2, '5'),
-  (4, 'product',    2, '*'),
-  (4, 'order',      2, '*'),
-  (4, 'order_item', 2, '*');
+(4, 'store', 2, '5'),
+(4, 'product', 2, '*'),
+(4, 'order', 2, '*'),
+(4, 'order_item', 2, '*');
 
 -- user 5: finance analyst — payment data with PII, read-all orders
 INSERT INTO GOVERNANCE.SECURITY.ENTITLEMENTS (user_id, resource, access_level, object_id) VALUES
-  (5, 'payment',    1, '*'),
-  (5, 'order',      2, '*');
+(5, 'payment', 1, '*'),
+(5, 'order', 2, '*');
 
 -- Convenience view used by masking / row-access policies
 CREATE OR REPLACE VIEW GOVERNANCE.SECURITY.V_ENTITLEMENTS AS

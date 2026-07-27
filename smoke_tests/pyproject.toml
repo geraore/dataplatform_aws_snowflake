@@ -1,5 +1,5 @@
 [project]
-name = "platform-api-tests"
+name = "smoke-tests"
 version = "0.1.0"
 description = "Smoke tests for the dataplatform Events and Analyst APIs"
 requires-python = ">=3.12"

@@ -40,6 +40,15 @@ app = cdk.App()
 # A short prefix so all resource names are recognisable in the console.
 prefix = app.node.try_get_context("prefix") or "dataplatform"
 
+# Inject snowflake_account_url from .env into CDK context so it does not need
+# to be committed in cdk.json. A -c flag at deploy time still takes precedence.
+_sf_account = config.get("SNOWFLAKE_ACCOUNT", "")
+if _sf_account and not app.node.try_get_context("snowflake_account_url"):
+    app.node.set_context(
+        "snowflake_account_url",
+        f"https://{_sf_account}.snowflakecomputing.com",
+    )
+
 env = cdk.Environment(
     account=config["CDK_DEFAULT_ACCOUNT"],
     region=config["CDK_DEFAULT_REGION"],

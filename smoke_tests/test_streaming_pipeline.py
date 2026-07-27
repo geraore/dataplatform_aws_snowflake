@@ -17,7 +17,7 @@ After a successful run, verify Snowflake delivery by running these queries
     FROM SILVER.STAGING.ECOMMERCE_CLICKS;
 
 Usage:
-    cd platform_api_tests
+    cd smoke_tests
     uv run python test_streaming_pipeline.py
     uv run python test_streaming_pipeline.py -n 50 -v
 """
@@ -28,10 +28,9 @@ import random
 import sys
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import requests
-
 from config import CE_HEADERS, EVENTS_API_URL
 
 PASS = "\033[32mPASS\033[0m"
@@ -61,6 +60,7 @@ def run(name: str, verbose: bool):
             if verbose:
                 print(f"         {e}")
         return fn
+
     return decorator
 
 
@@ -70,17 +70,23 @@ def _click_event() -> dict:
         "id": str(uuid.uuid4()),
         "source": "//dataplatform/web-tracker",
         "type": "ecommerce_clicks",
-        "time": datetime.now(timezone.utc).isoformat(),
+        "time": datetime.now(UTC).isoformat(),
         "datacontenttype": "application/json",
         "data": {
             "click_id": str(uuid.uuid4()),
             "session_id": random.randint(1, 200),
             "customer_id": random.randint(1, 1000),
             "product_id": random.randint(1, 50),
-            "page_type": random.choice(["home", "product", "cart", "checkout", "search", "category"]),
-            "action": random.choice(["view", "click", "add_to_cart", "remove_from_cart", "checkout", "purchase"]),
+            "page_type": random.choice(
+                ["home", "product", "cart", "checkout", "search", "category"]
+            ),
+            "action": random.choice(
+                ["view", "click", "add_to_cart", "remove_from_cart", "checkout", "purchase"]
+            ),
             "device_type": random.choice(["mobile", "desktop", "tablet"]),
-            "referrer": random.choice(["organic", "direct", "paid_search", "email", "social", "affiliate"]),
+            "referrer": random.choice(
+                ["organic", "direct", "paid_search", "email", "social", "affiliate"]
+            ),
         },
     }
 
@@ -113,6 +119,7 @@ def test_burst(n: int, verbose: bool):
 
 def test_routing_only_clicks(verbose: bool):
     """Sanity check: a non-click event type is still accepted (it goes to S3 only)."""
+
     @run("Non-click event type also accepted → 202", verbose)
     def _():
         evt = {
@@ -120,7 +127,7 @@ def test_routing_only_clicks(verbose: bool):
             "id": str(uuid.uuid4()),
             "source": "//dataplatform/tests",
             "type": "com.dataplatform.test.routing_check",
-            "time": datetime.now(timezone.utc).isoformat(),
+            "time": datetime.now(UTC).isoformat(),
         }
         r = _post(evt)
         assert r.status_code == 202, f"expected 202, got {r.status_code}: {r.text}"
@@ -131,7 +138,8 @@ def main():
         description="Streaming pipeline smoke test — ecommerce_clicks",
     )
     parser.add_argument(
-        "-n", "--count",
+        "-n",
+        "--count",
         type=int,
         default=20,
         metavar="INT",

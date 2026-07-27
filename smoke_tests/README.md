@@ -1,4 +1,4 @@
-# Platform API Tests
+# Smoke Tests
 
 Smoke tests for the two data platform APIs: the **Events ingestion API** and the **Cortex Analyst API**.
 
@@ -6,8 +6,8 @@ Smoke tests for the two data platform APIs: the **Events ingestion API** and the
 
 | API | URL | Auth |
 |-----|-----|------|
-| Events (ingest) | `https://c0ossmw0xc.execute-api.us-east-2.amazonaws.com/prod/events` | `Authorization: Bearer demo-allow-token` |
-| Analyst (Cortex) | `https://fm7ytstqt0.execute-api.us-east-2.amazonaws.com/prod/ask` | `Authorization: Bearer demo-allow-token` |
+| Events (ingest) | `$EVENTS_API_URL` | `Authorization: Bearer demo-allow-token` |
+| Analyst (Cortex) | `$ANALYST_API_URL` | `Authorization: Bearer demo-allow-token` |
 
 ## CloudEvents 1.0 — Events API
 
@@ -65,7 +65,7 @@ The `make_event()` helper in `config.py` builds valid events and auto-generates 
 
 ## Setup
 
-The environment is managed by [uv](https://docs.astral.sh/uv/). From inside `platform_api_tests/`:
+The environment is managed by [uv](https://docs.astral.sh/uv/). From inside `smoke_tests/`:
 
 ```bash
 uv sync
@@ -74,7 +74,7 @@ uv sync
 ## Run
 
 ```bash
-# from inside platform_api_tests/
+# from inside smoke_tests/
 uv run python test_events_api.py
 uv run python test_analyst_api.py
 

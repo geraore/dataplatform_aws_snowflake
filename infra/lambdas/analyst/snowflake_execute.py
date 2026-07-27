@@ -1,5 +1,6 @@
 import datetime
 import decimal
+from typing import Any
 
 import snowflake.connector
 from cryptography.hazmat.primitives import serialization
@@ -28,7 +29,7 @@ def execute_as_user(
 
 
 def _coerce(row: dict) -> dict:
-    out = {}
+    out: dict[str, Any] = {}
     for k, v in row.items():
         if isinstance(v, decimal.Decimal):
             out[k] = float(v)

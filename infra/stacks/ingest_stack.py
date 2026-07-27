@@ -260,7 +260,8 @@ class IngestStack(Stack):
         # ExtendedS3DestinationConfiguration is required for dynamic partitioning.
         # MetadataExtraction strips the action suffix (.upsert / .delete) from the
         # CloudEvent `type` so files are partitioned at the entity level:
-        #   com.dataplatform.ecommerce.customer.upsert  →  events/com.dataplatform.ecommerce.customer/<date>/
+        #   com.dataplatform.ecommerce.customer.upsert
+        #     →  events/com.dataplatform.ecommerce.customer/<date>/
         # This lets the COPY pre-hook read all actions for an entity from one prefix.
         # AWS requires a minimum 64 MB buffer when dynamic partitioning is enabled.
         s3_events_stream = firehose.CfnDeliveryStream(
@@ -297,7 +298,10 @@ class IngestStack(Stack):
                                     parameters=[
                                         firehose.CfnDeliveryStream.ProcessorParameterProperty(
                                             parameter_name="MetadataExtractionQuery",
-                                            parameter_value="{event_type: (.type | split(\".\")[:-1] | join(\".\"))}",
+                                            parameter_value=(
+                                                "{event_type:"
+                                                ' (.type | split(".")[:-1] | join("."))}'
+                                            ),
                                         ),
                                         firehose.CfnDeliveryStream.ProcessorParameterProperty(
                                             parameter_name="JsonParsingEngine",

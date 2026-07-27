@@ -22,7 +22,6 @@ import sys
 import time
 
 import requests
-
 from config import CE_HEADERS, EVENTS_API_URL, make_event
 
 PASS = "\033[32mPASS\033[0m"
@@ -61,12 +60,14 @@ def run(name: str, verbose: bool):
             if verbose:
                 print(f"         {e}")
         return fn
+
     return decorator
 
 
 # ---------------------------------------------------------------------------
 # Auth tests (authorizer runs before Lambda — content-type does not matter)
 # ---------------------------------------------------------------------------
+
 
 def test_missing_auth(verbose: bool):
     @run("No Authorization header → 401", verbose)
@@ -88,6 +89,7 @@ def test_wrong_token(verbose: bool):
 # Content-Type enforcement (CloudEvents structured mode)
 # ---------------------------------------------------------------------------
 
+
 def test_wrong_content_type(verbose: bool):
     @run("Content-Type: application/json (not CloudEvents) → 415", verbose)
     def _():
@@ -99,6 +101,7 @@ def test_wrong_content_type(verbose: bool):
 # ---------------------------------------------------------------------------
 # CloudEvents required-attribute validation
 # ---------------------------------------------------------------------------
+
 
 def test_missing_specversion(verbose: bool):
     @run("Missing 'specversion' → 400", verbose)
@@ -198,6 +201,7 @@ def test_get_method(verbose: bool):
 # Happy-path: valid CloudEvents
 # ---------------------------------------------------------------------------
 
+
 def test_minimal_event(verbose: bool):
     @run("Minimal CloudEvent (required attrs only) → 202", verbose)
     def _():
@@ -260,6 +264,7 @@ def test_event_with_subject(verbose: bool):
 # Latency
 # ---------------------------------------------------------------------------
 
+
 def test_response_time(verbose: bool):
     @run("Responds within 5 seconds", verbose)
     def _():
@@ -275,13 +280,14 @@ def test_response_time(verbose: bool):
 
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(description="Events API smoke tests (CloudEvents 1.0)")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
     print(f"\nEvents API  →  {EVENTS_API_URL}")
-    print(f"CloudEvents spec: https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md\n")
+    print("CloudEvents spec: https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md\n")
 
     for fn in [
         # Auth

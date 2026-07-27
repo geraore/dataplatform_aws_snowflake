@@ -1,7 +1,0 @@
-{
-  "user": "CORTEX_USER",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIE...your-key-here...\n-----END PRIVATE KEY-----\n",
-  "key_passphrase": "",
-  "account_identifier": "GUJAEGZ-TY73799",
-  "account_url": "https://GUJAEGZ-TY73799.snowflakecomputing.com"
-}

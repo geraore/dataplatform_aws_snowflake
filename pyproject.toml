@@ -1,0 +1,38 @@
+[project]
+name = "dataplatform-lint"
+version = "0.1.0"
+description = "Root-level code quality and linting tools for the data platform monorepo"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.0",
+    "sqlfluff>=3.3.0",
+    "mypy>=1.11.0",
+]
+
+[tool.mypy]
+python_version = "3.11"
+# Third-party stubs are not installed in the root lint env; suppress missing-import
+# noise so mypy focuses on logic errors within this codebase.
+ignore_missing_imports = true
+# Multiple Lambda packages share handler.py as their filename; treat every
+# directory as its own namespace root so module names don't collide.
+explicit_package_bases = true
+# Warn about redundant annotations; skip warn_return_any — too noisy when
+# ignore_missing_imports is on (every untyped library call returns Any).
+warn_unused_ignores = true
+warn_redundant_casts = true
+# dbt vendored models, CDK output, and Airflow DAGs are excluded.
+# Airflow/Cosmos imports are not available in the root lint venv; mypy cannot
+# check DAGs without the full Airflow environment.
+exclude = [
+    "dbt/",
+    "infra/cdk[.]out/",
+    "airflow/",
+    "\\.venv/",
+]
+
+[tool.uv]
+package = false

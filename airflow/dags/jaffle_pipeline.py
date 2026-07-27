@@ -28,9 +28,6 @@ from datetime import datetime
 from pathlib import Path
 
 from airflow.operators.bash import BashOperator
-
-from airflow import DAG
-
 from cosmos import (
     DbtTaskGroup,
     ExecutionConfig,
@@ -39,6 +36,8 @@ from cosmos import (
     RenderConfig,
 )
 from cosmos.constants import InvocationMode
+
+from airflow import DAG
 
 try:
     # Provider is present on MWAA and in the local image's requirements.
@@ -99,9 +98,7 @@ with DAG(
     dbt_deps = BashOperator(
         task_id="dbt_deps",
         bash_command=(
-            f"cd {DBT_PROJECT_DIR} && "
-            "$DBT_EXECUTABLE_PATH deps "
-            f"--profiles-dir {DBT_PROFILES_DIR}"
+            f"cd {DBT_PROJECT_DIR} && $DBT_EXECUTABLE_PATH deps --profiles-dir {DBT_PROFILES_DIR}"
         ),
     )
 

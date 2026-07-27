@@ -16,11 +16,11 @@
 USE ROLE SCHEMACHANGE_ROLE;
 
 CREATE STORAGE INTEGRATION IF NOT EXISTS EVENTS_S3_INT
-    TYPE                      = EXTERNAL_STAGE
-    STORAGE_PROVIDER          = 'S3'
-    ENABLED                   = TRUE
-    STORAGE_AWS_ROLE_ARN      = 'arn:aws:iam::190855935274:role/dataplatform-snowflake-s3-role'
-    STORAGE_ALLOWED_LOCATIONS = ('s3://dataplatform-events-190855935274/');
+TYPE = EXTERNAL_STAGE
+STORAGE_PROVIDER = 'S3'
+ENABLED = TRUE
+STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::190855935274:role/dataplatform-snowflake-s3-role'
+STORAGE_ALLOWED_LOCATIONS = ('s3://dataplatform-events-190855935274/');
 
 -- After DESC INTEGRATION you will see the two values needed to lock the IAM
 -- trust policy (see step 3 in the header comment):

@@ -61,13 +61,15 @@ class AnalystStack(Stack):
             secret_name=f"{prefix}/snowflake/cortex-connection",
             description="Snowflake key-pair credentials for the Cortex Analyst Lambda.",
             secret_string_value=SecretValue.unsafe_plain_text(
-                json.dumps({
-                    "user": "CORTEX_USER",
-                    "private_key": cortex_private_key,
-                    "key_passphrase": "",
-                    "account_identifier": snowflake_account.upper(),
-                    "account_url": f"https://{snowflake_account}.snowflakecomputing.com",
-                })
+                json.dumps(
+                    {
+                        "user": "CORTEX_USER",
+                        "private_key": cortex_private_key,
+                        "key_passphrase": "",
+                        "account_identifier": snowflake_account.upper(),
+                        "account_url": f"https://{snowflake_account}.snowflakecomputing.com",
+                    }
+                )
             ),
         )
 
@@ -108,7 +110,8 @@ class AnalystStack(Stack):
                         "bash",
                         "-c",
                         "pip install -r requirements.txt -t /asset-output --quiet"
-                        " && cp handler.py cortex.py snowflake_execute.py snowflake_secrets.py snowflake_auth.py /asset-output",
+                        " && cp handler.py cortex.py snowflake_execute.py"
+                        " snowflake_secrets.py snowflake_auth.py /asset-output",
                     ],
                 ),
             ),

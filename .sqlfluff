@@ -8,6 +8,11 @@ max_line_length = 100
 # CP02 disabled: policy lambda args / landing columns are intentionally lower case.
 exclude_rules = RF04, ST06, RF02, CP02
 
+[sqlfluff:templater:jinja:macros]
+# schemachange's env_var() function — provide a short placeholder so template
+# renders without TMP warnings and line-length checks see realistic lengths.
+env_var = {% macro env_var(var_name, default='') %}000000000000{% endmacro %}
+
 [sqlfluff:indentation]
 indented_joins = false
 template_blocks_indent = false

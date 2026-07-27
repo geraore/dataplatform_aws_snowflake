@@ -1,8 +1,17 @@
 dbt/
 infra/
 cdk.out/
-# sqlfluff's snowflake dialect cannot yet parse CREATE ROW ACCESS POLICY or
-# GRANT CREATE SEMANTIC VIEW (as of 4.x). Exclude these files until dialect catches up.
+# sqlfluff's snowflake dialect cannot yet parse the following syntax (as of 4.x).
+# Exclude until dialect catches up.
+#
+# RSA_PUBLIC_KEY in ALTER USER
+snowflake/bootstrap/00_bootstrap.sql
+snowflake/scripts/V1.1.3__dbt_user.sql
+# CREATE / ALTER ROW ACCESS POLICY, GRANT CREATE SEMANTIC VIEW
 snowflake/scripts/V1.1.5__abac_policies.sql
 snowflake/scripts/V1.1.7__semantic_view_privileges.sql
 snowflake/scripts/V1.1.13__per_resource_policies.sql
+snowflake/scripts/V1.1.15__fix_getvariable_case.sql
+# GRANT CREATE DYNAMIC TABLE, GRANT SELECT ON ALL DYNAMIC TABLES
+snowflake/scripts/V1.1.8__cortex_analyst_setup.sql
+snowflake/scripts/V1.1.16__ecommerce_clicks_prereqs.sql

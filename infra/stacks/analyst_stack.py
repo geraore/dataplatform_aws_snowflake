@@ -7,7 +7,7 @@
                        |  1. reads CORTEX_USER key-pair from Secrets Manager
                        |  2. mints a Snowflake JWT (key-pair auth)
                        |  3. POST /api/v2/cortex/analyst/message
-                       |     -> Snowflake Cortex Analyst (GOLD.MARTS.SEM_JAFFLE)
+                       |     -> Snowflake Cortex Analyst (GOLD.MARTS.SEM_JAFFLE_SECURED)
                        v
                    { interpretation, sql }
 
@@ -18,7 +18,7 @@ One post-deploy manual step (run once as ACCOUNTADMIN in Snowflake):
     GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE CORTEX_ROLE;
 
 CDK context keys (cdk.json or -c):
-  cortex_source  - fully-qualified semantic view (default: GOLD.MARTS.SEM_JAFFLE)
+  cortex_source  - fully-qualified semantic view (default: GOLD.MARTS.SEM_JAFFLE_SECURED)
   demo_token     - shared demo bearer token (default: demo-allow-token)
 """
 
@@ -32,7 +32,7 @@ from aws_cdk import aws_logs as logs
 from aws_cdk import aws_secretsmanager as secretsmanager
 from constructs import Construct
 
-DEFAULT_CORTEX_SOURCE = "GOLD.MARTS.SEM_JAFFLE"
+DEFAULT_CORTEX_SOURCE = "GOLD.MARTS.SEM_JAFFLE_SECURED"
 DEFAULT_DEMO_TOKEN = "demo-allow-token"  # noqa: S105
 
 
@@ -108,12 +108,12 @@ class AnalystStack(Stack):
                         "bash",
                         "-c",
                         "pip install -r requirements.txt -t /asset-output --quiet"
-                        " && cp handler.py cortex.py sf_secrets.py snowflake_auth.py /asset-output",
+                        " && cp handler.py cortex.py snowflake_execute.py snowflake_secrets.py snowflake_auth.py /asset-output",
                     ],
                 ),
             ),
-            timeout=Duration.seconds(60),
-            memory_size=256,
+            timeout=Duration.seconds(120),
+            memory_size=512,
             environment={
                 "SNOWFLAKE_SECRET_ARN": cortex_secret.secret_arn,
                 "CORTEX_SOURCE": cortex_source,

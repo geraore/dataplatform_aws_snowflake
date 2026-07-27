@@ -20,7 +20,8 @@ def ask(account_url: str, token: str, source: str, question: str) -> dict:
             "messages": [
                 {"role": "user", "content": [{"type": "text", "text": question}]}
             ],
-            "semantic_model_file": source,
+            # Stage YAML files start with '@'; native Semantic View objects use semantic_view.
+            "semantic_model_file" if source.startswith("@") else "semantic_view": source,
         },
         timeout=60,
     )

@@ -12,6 +12,7 @@
     ]
   },
   "context": {
+    "snowflake_account_url": "https://GUJAEGZ-TY73799.snowflakecomputing.com",
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/aws-iam:minimizePolicies": true,

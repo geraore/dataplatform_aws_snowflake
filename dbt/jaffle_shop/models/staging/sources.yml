@@ -27,3 +27,10 @@ sources:
 
       - name: stores
         description: "Raw store events (com.dataplatform.ecommerce.store.upserted)"
+
+      - name: events
+        description: >
+          Firehose Snowpipe Streaming landing table. Receives event types listed
+          in infra/routing.yaml (currently ecommerce_clicks). Each row is one
+          CloudEvent stored as a VARIANT in record_content, plus Firehose
+          metadata in record_metadata.

@@ -26,6 +26,7 @@ from aws_cdk import (
     CfnOutput,
     Duration,
     RemovalPolicy,
+    SecretValue,
     Stack,
 )
 from aws_cdk import aws_apigateway as apigw
@@ -42,10 +43,6 @@ from constructs import Construct
 # Marker on every event the router publishes; the delivery rule matches on it.
 EVENT_SOURCE = "dataplatform.ingest"
 
-# In a real deployment store this in SSM/Secrets Manager. It is a demo "accept
-# anything that matches" token, surfaced via context so it is not committed.
-DEFAULT_DEMO_TOKEN = "demo-allow-token"  # noqa: S105
-
 
 class IngestStack(Stack):
     def __init__(
@@ -60,7 +57,17 @@ class IngestStack(Stack):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        demo_token = self.node.try_get_context("demo_token") or DEFAULT_DEMO_TOKEN
+        # --- Demo API token (Secrets Manager) ------------------------------------
+        # Initial value is "demo-allow-token". Update it in the AWS Console or CLI
+        # after deploy; the authorizer Lambdas pick up the new value on next cold start.
+        self.demo_token_secret = secretsmanager.Secret(
+            self,
+            "DemoTokenSecret",
+            secret_name=f"{prefix}/demo/api-token",
+            description="Bearer token for the demo API authorizer — update after deploy.",
+            secret_string_value=SecretValue.unsafe_plain_text("demo-allow-token"),
+            removal_policy=RemovalPolicy.DESTROY,
+        )
 
         # --- EventBridge event bus -----------------------------------------------
         bus = events.EventBus(
@@ -78,8 +85,9 @@ class IngestStack(Stack):
             handler="handler.handler",
             code=lambda_.Code.from_asset("lambdas/authorizer"),
             timeout=Duration.seconds(10),
-            environment={"DEMO_TOKEN": demo_token},
+            environment={"DEMO_TOKEN_SECRET_ARN": self.demo_token_secret.secret_arn},
         )
+        self.demo_token_secret.grant_read(authorizer_fn)
 
         router_fn = lambda_.Function(
             self,
@@ -416,6 +424,7 @@ class IngestStack(Stack):
         # Expose the invoke URL for the verification curl.
         self.api_url = api.url
         CfnOutput(self, "EventsEndpoint", value=f"{api.url}events")
+        CfnOutput(self, "DemoTokenSecretArn", value=self.demo_token_secret.secret_arn)
         CfnOutput(self, "EventBusName", value=bus.event_bus_name)
         CfnOutput(self, "EventsBucketName", value=events_bucket.bucket_name)
         CfnOutput(self, "EventsBucketArn", value=events_bucket.bucket_arn)

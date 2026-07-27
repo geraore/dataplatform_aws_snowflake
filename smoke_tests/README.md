@@ -85,7 +85,10 @@ uv run python test_analyst_api.py -v
 
 ## Token override
 
-If a custom token was deployed via CDK context (`demo_token`):
+The token is stored in Secrets Manager under `dataplatform/demo/api-token`. Update it there
+(AWS Console or CLI) and let the authorizer Lambda cold-start to pick up the new value.
+
+To run the tests with a different token locally:
 
 ```bash
 DEMO_TOKEN=my-custom-token uv run python test_events_api.py

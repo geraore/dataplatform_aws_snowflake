@@ -1,6 +1,6 @@
 -- External stage over the events S3 bucket + grants for COPY commands.
 --
--- Replace <prefix>-events-<aws-account-id> with the EventsBucketName CDK output.
+-- The S3 URL is templated from CDK_DEFAULT_ACCOUNT (set in .env).
 -- The stage re-uses the EVENTS_S3_INT storage integration from V1.1.9.
 --
 -- COPY pattern (run as DBT_ROLE or SCHEMACHANGE_ROLE):
@@ -28,7 +28,7 @@
 USE ROLE SCHEMACHANGE_ROLE;
 
 CREATE STAGE IF NOT EXISTS BRONZE.RAW.EVENTS_S3_STAGE
-    URL = 's3://dataplatform-events-190855935274/events/'
+    URL = 's3://dataplatform-events-{{ env_var("CDK_DEFAULT_ACCOUNT") }}/events/'
     STORAGE_INTEGRATION = EVENTS_S3_INT
     FILE_FORMAT = (TYPE = JSON STRIP_OUTER_ARRAY = FALSE)
     COMMENT = 'External stage over the events S3 bucket (dynamic-partitioned JSONL)';

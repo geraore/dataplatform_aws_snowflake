@@ -1,13 +1,17 @@
 """Token Lambda authorizer.
 
-Demo behaviour: allow the request only when the ``Authorization`` header equals
-the configured dummy token. Real deployments would validate a JWT / look up an
-API key here.
+Demo behaviour: allow the request only when the ``Authorization`` header
+matches the token stored in Secrets Manager. Real deployments would validate
+a JWT or look up an API key here.
 """
 
 import os
 
-DEMO_TOKEN = os.environ.get("DEMO_TOKEN", "demo-allow-token")
+import boto3
+
+_sm = boto3.client("secretsmanager")
+# Fetched once at cold start; cached for the lifetime of the execution environment.
+DEMO_TOKEN = _sm.get_secret_value(SecretId=os.environ["DEMO_TOKEN_SECRET_ARN"])["SecretString"]
 
 
 def _policy(principal_id: str, effect: str, resource: str) -> dict:

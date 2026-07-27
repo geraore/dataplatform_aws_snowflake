@@ -136,7 +136,7 @@ All non-secret configuration passes through CDK context (`cdk.json` or `-c key=v
 The IAM role Snowflake assumes to COPY from S3 requires a chicken-and-egg setup:
 1. Deploy CDK → copy the `SnowflakeS3RoleArn` output.
 2. Run schemachange `V1.1.9` with that ARN → `DESC INTEGRATION EVENTS_S3_INT` to get `STORAGE_AWS_IAM_USER_ARN` and `STORAGE_AWS_EXTERNAL_ID`.
-3. Add those two values as CDK context keys (`snowflake_iam_user_arn`, `snowflake_external_id`) and redeploy to lock the trust policy.
+3. Add those two values to `.env` as `SNOWFLAKE_IAM_USER_ARN` and `SNOWFLAKE_EXTERNAL_ID`, then redeploy to lock the trust policy.
 
 ### Event routing
 

@@ -19,7 +19,6 @@ One post-deploy manual step (run once as ACCOUNTADMIN in Snowflake):
 
 CDK context keys (cdk.json or -c):
   cortex_source  - fully-qualified semantic view (default: GOLD.MARTS.SEM_JAFFLE_SECURED)
-  demo_token     - shared demo bearer token (default: demo-allow-token)
 """
 
 import json
@@ -33,7 +32,6 @@ from aws_cdk import aws_secretsmanager as secretsmanager
 from constructs import Construct
 
 DEFAULT_CORTEX_SOURCE = "GOLD.MARTS.SEM_JAFFLE_SECURED"
-DEFAULT_DEMO_TOKEN = "demo-allow-token"  # noqa: S105
 
 
 class AnalystStack(Stack):
@@ -45,11 +43,11 @@ class AnalystStack(Stack):
         prefix: str,
         snowflake_account: str,
         cortex_private_key: str,
+        demo_token_secret: secretsmanager.ISecret,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        demo_token = self.node.try_get_context("demo_token") or DEFAULT_DEMO_TOKEN
         cortex_source = self.node.try_get_context("cortex_source") or DEFAULT_CORTEX_SOURCE
 
         # --- Secrets Manager: CORTEX_USER credentials ----------------------------
@@ -73,7 +71,7 @@ class AnalystStack(Stack):
             ),
         )
 
-        # --- Lambda authorizer (same demo token pattern as IngestStack) ----------
+        # --- Lambda authorizer (shares the same Secrets Manager token as IngestStack) --
         authorizer_fn = lambda_.Function(
             self,
             "AuthorizerFn",
@@ -82,8 +80,9 @@ class AnalystStack(Stack):
             handler="handler.handler",
             code=lambda_.Code.from_asset("lambdas/authorizer"),
             timeout=Duration.seconds(10),
-            environment={"DEMO_TOKEN": demo_token},
+            environment={"DEMO_TOKEN_SECRET_ARN": demo_token_secret.secret_arn},
         )
+        demo_token_secret.grant_read(authorizer_fn)
 
         # --- Analyst Lambda (bundled: PyJWT + cryptography + requests) -----------
         # Requires Docker on the build machine; CDK bundles deps into the zip.

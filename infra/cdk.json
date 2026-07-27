@@ -12,8 +12,6 @@
     ]
   },
   "context": {
-    "snowflake_iam_user_arn": "arn:aws:iam::627896767179:user/40dx1000-s",
-    "snowflake_external_id": "ID95883_SFCRole=181_QFXcEBxoAsvkgaTMbCwCrGZokok=",
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/aws-iam:minimizePolicies": true,

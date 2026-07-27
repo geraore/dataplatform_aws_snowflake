@@ -11,16 +11,16 @@
 --      them as CDK context on the next deploy to lock the trust policy:
 --        cdk deploy -c snowflake_iam_user_arn=<value> -c snowflake_external_id=<value>
 --
--- STORAGE_ALLOWED_LOCATIONS: replace <prefix> and <aws-account-id> with the
--- values from CDK outputs (EventsBucketName  →  <prefix>-events-<aws-account-id>).
+-- STORAGE_AWS_ROLE_ARN and STORAGE_ALLOWED_LOCATIONS are templated from the
+-- CDK_DEFAULT_ACCOUNT env var (set in .env). Run schemachange with .env sourced.
 USE ROLE SCHEMACHANGE_ROLE;
 
 CREATE STORAGE INTEGRATION IF NOT EXISTS EVENTS_S3_INT
 TYPE = EXTERNAL_STAGE
 STORAGE_PROVIDER = 'S3'
 ENABLED = TRUE
-STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::190855935274:role/dataplatform-snowflake-s3-role'
-STORAGE_ALLOWED_LOCATIONS = ('s3://dataplatform-events-190855935274/');
+STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::{{ env_var("CDK_DEFAULT_ACCOUNT") }}:role/dataplatform-snowflake-s3-role'
+STORAGE_ALLOWED_LOCATIONS = ('s3://dataplatform-events-{{ env_var("CDK_DEFAULT_ACCOUNT") }}/');
 
 -- After DESC INTEGRATION you will see the two values needed to lock the IAM
 -- trust policy (see step 3 in the header comment):

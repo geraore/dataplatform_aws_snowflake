@@ -40,14 +40,22 @@ app = cdk.App()
 # A short prefix so all resource names are recognisable in the console.
 prefix = app.node.try_get_context("prefix") or "dataplatform"
 
-# Inject snowflake_account_url from .env into CDK context so it does not need
-# to be committed in cdk.json. A -c flag at deploy time still takes precedence.
+# Inject deployment-specific values from .env into CDK context so they do not
+# need to be committed in cdk.json. -c flags at deploy time still take precedence.
 _sf_account = config.get("SNOWFLAKE_ACCOUNT", "")
 if _sf_account and not app.node.try_get_context("snowflake_account_url"):
     app.node.set_context(
         "snowflake_account_url",
         f"https://{_sf_account}.snowflakecomputing.com",
     )
+
+_sf_iam_user_arn = config.get("SNOWFLAKE_IAM_USER_ARN", "")
+if _sf_iam_user_arn and not app.node.try_get_context("snowflake_iam_user_arn"):
+    app.node.set_context("snowflake_iam_user_arn", _sf_iam_user_arn)
+
+_sf_external_id = config.get("SNOWFLAKE_EXTERNAL_ID", "")
+if _sf_external_id and not app.node.try_get_context("snowflake_external_id"):
+    app.node.set_context("snowflake_external_id", _sf_external_id)
 
 env = cdk.Environment(
     account=config["CDK_DEFAULT_ACCOUNT"],
@@ -76,6 +84,7 @@ analyst = AnalystStack(
     prefix=prefix,
     snowflake_account=config["SNOWFLAKE_ACCOUNT"],
     cortex_private_key=cortex_private_key,
+    demo_token_secret=ingest.demo_token_secret,
     env=env,
 )
 

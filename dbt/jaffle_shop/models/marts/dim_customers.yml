@@ -3,6 +3,9 @@ version: 2
 models:
   - name: dim_customers
     description: One row per customer with derived facts based on their orders and payments.
+    config:
+      post_hook:
+        - "{{ apply_rbac_masking(this, model) }}"
 
     columns:
       - name: customer_id
@@ -13,9 +16,19 @@ models:
 
       - name: first_name
         description: Customer's first name. PII.
+        data_type: varchar
+        config:
+          meta:
+            security:
+              pii: true
 
       - name: last_name
         description: Customer's last name. PII.
+        data_type: varchar
+        config:
+          meta:
+            security:
+              pii: true
 
       - name: first_order
         description: Date (UTC) of the customer's first order.
